@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% block admin_styles %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <!-- Sidebar navigation -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-cross text-warning"></i> VBS <span>Teacher</span>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item {% block nav_dash %}{% endblock %}">
+                <a href="/teacher/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_students %}{% endblock %}">
+                <a href="/teacher/students/"><i class="fas fa-user-graduate"></i> Manage Students</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_skills %}{% endblock %}">
+                <a href="/teacher/skills/"><i class="fas fa-tools"></i> Skill Acquisition</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_assess %}{% endblock %}">
+                <a href="/teacher/assessment/"><i class="fas fa-star"></i> Grades</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_banks %}{% endblock %}">
+                <a href="/teacher/question-banks/"><i class="fas fa-database"></i> Question Banks</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_exams %}{% endblock %}">
+                <a href="/teacher/exams/"><i class="fas fa-scroll"></i> Exam Builder</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_monitor %}{% endblock %}">
+                <a href="/teacher/exams/monitor/"><i class="fas fa-video"></i> Live Monitor</a>
+            </li>
+        </ul>
+        
+        <!-- User info block at bottom -->
+        <div class="sidebar-user">
+            <img src="{{ url_for('static', filename='uploads/' + (deets.profile_photo if deets and deets.profile_photo != 'default-avatar.png' else 'default-avatar.svg')) }}" 
+                 class="sidebar-user-avatar" alt="Avatar">
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-name">{{ deets.username if deets else 'Teacher' }}</div>
+                <div class="sidebar-user-role">Class Instructor</div>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Main page workspace -->
+    <main class="dashboard-content">
+        {% block admin_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

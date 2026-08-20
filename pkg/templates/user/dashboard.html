@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}My Dashboard - VBS Champions{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/child-cbt.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Student Profile Header Card -->
+    <div class="vbs-card p-4 mb-4" style="background: linear-gradient(135deg, var(--primary-light), #e0e7ff); border: 2px solid var(--primary);">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <img src="{{ url_for('static', filename='uploads/' + (deets.profile_photo if deets and deets.profile_photo != 'default-avatar.png' else 'default-avatar.svg')) }}" 
+                     class="rounded-circle border border-primary border-3" style="width: 80px; height: 80px; object-fit: cover;" alt="Avatar">
+            </div>
+            <div class="col">
+                <h2 class="fw-bold mb-1" style="color: var(--primary);">Hi, {{ student.first_name }}!</h2>
+                <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
+                    <span class="badge bg-primary" style="font-size: 14px;"><i class="fas fa-child"></i> Age: {{ student.age }}</span>
+                    {% if student_class %}
+                        <span class="badge bg-secondary" style="font-size: 14px;"><i class="fas fa-school"></i> Class: {{ student_class.name }} {% if student_class.min_age or student_class.max_age %} (Ages {{ student_class.min_age or '?' }}–{{ student_class.max_age or '?' }}){% elif student_class.category %} ({{ student_class.category.name }}){% endif %}</span>
+                    {% else %}
+                        <span class="badge bg-danger" style="font-size: 14px;"><i class="fas fa-times"></i> Unassigned Class</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-auto text-md-end mt-3 mt-md-0">
+                {% if active_year %}
+                    <div class="small fw-bold text-uppercase text-muted">Active VBS Theme:</div>
+                    <div class="h5 fw-bold text-primary mb-0"><i class="fas fa-book-open"></i> {{ active_year.theme }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Exams / Manual Assessment Panel -->
+        <div class="col-lg-8 mb-4">
+            <div class="vbs-card p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                    <h3 class="fw-bold mb-0" style="color: var(--dark); font-family: var(--font-heading);"><i class="fas fa-file-signature"></i> My Evaluations</h3>
+                    {% if active_year and active_year.results_released and has_printable_result %}
+                        <a href="{{ url_for('student_result_print') }}" class="btn btn-outline-primary btn-pill" target="_blank">
+                            <i class="fas fa-print"></i> Print Result
+                        </a>
+                    {% endif %}
+                </div>
+                
+                {% if is_under_six %}
+                    <!-- Under 6 Manual Assessment Board -->
+                    {% if active_year and active_year.results_released %}
+                        <div class="text-center p-4" style="background-color: var(--success-light); border-radius: var(--border-radius-md); border: 2px solid var(--success);">
+                            <div style="font-size: 60px; color: var(--success);" class="mb-3">
+                                <i class="fas fa-award"></i>
+                            </div>
+                            <h4 class="fw-bold text-success">Congratulations, VBS Champion!</h4>
+                            <p class="text-muted mb-4">Your Teacher has graded your VBS manual projects. Here is your scorecard:</p>
+                            
+                            <div class="row g-3 justify-content-center">
+                                {% for score_rec in skills_assessments %}
+                                    <div class="col-sm-6 col-md-4">
+                                        <div class="p-3 bg-white border rounded shadow-sm text-center">
+                                            <div class="fw-bold text-uppercase text-muted" style="font-size: 12px;">{{ score_rec.skill.name }}</div>
+                                            <div class="h3 fw-bold text-primary my-2">{{ score_rec.score }}/100</div>
+                                            {% if score_rec.comments %}
+                                                <div class="small text-muted italic">"{{ score_rec.comments }}"</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="text-muted italic">No scores entered yet.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center p-4 bg-light" style="border-radius: var(--border-radius-md); border: 2px dashed #cbd5e1;">
+                            <div style="font-size: 60px; color: #94a3b8;" class="mb-3">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <h4 class="fw-bold text-secondary">Manual Assessment</h4>
+                            <p class="text-muted mb-0">Your graduation certificate and skills evaluations are being reviewed by the Teacher. Scores will be displayed here once results are released!</p>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    {% if has_manual_assessment and active_year and active_year.results_released %}
+                        <div class="p-3 mb-4 border rounded bg-light">
+                            <h5 class="fw-bold text-secondary"><i class="fas fa-star"></i> Manual Assessment</h5>
+                            {% for score_rec in skills_assessments %}
+                                <div class="d-flex justify-content-between border-bottom py-2">
+                                    <span>{{ score_rec.skill.name }}</span><strong>{{ score_rec.score }} / 100</strong>
+                                </div>
+                            {% else %}
+                                <div class="text-muted">No manual score recorded yet.</div>
+                            {% endfor %}
+                            {% if assessment_summary.cbt_possible > 0 %}
+                                <div class="mt-3 pt-3 border-top fw-bold">Combined Total: {{ (assessment_summary.manual_earned + assessment_summary.cbt_earned)|round(2) }} / {{ assessment_summary.manual_possible + assessment_summary.cbt_possible }}</div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <!-- Age 6 to 15 CBT Exams List -->
+                    {% for exam in exams %}
+                        {% set attempt = attempts_map.get(exam.id) %}
+                        <div class="p-4 mb-3 border rounded-3 bg-white" style="transition: all 0.3s; border-left: 5px solid var(--primary) !important;">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h5 class="fw-bold mb-1">{{ exam.title }}</h5>
+                                    <div class="text-muted small">
+                                        <i class="far fa-clock"></i> Duration: {{ exam.duration_minutes }} minutes
+                                    </div>
+                                </div>
+                                <div class="col-auto text-end">
+                                    {% if not attempt %}
+                                        <a href="/student/exam/prestart/{{ exam.id }}/" class="btn btn-primary btn-pill"><i class="fas fa-play"></i> Start Exam</a>
+                                    {% elif not attempt.is_submitted %}
+                                        <a href="/student/exam/run/{{ attempt.id }}/" class="btn btn-secondary btn-pill"><i class="fas fa-forward"></i> Resume Exam</a>
+                                    {% else %}
+                                        {% if active_year and active_year.results_released %}
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="text-end">
+                                                    <div class="small text-muted font-bold text-uppercase">Result Score</div>
+                                                    <span class="h4 fw-bold text-success">{{ attempt.score|round(2) }} / {{ attempt_totals_map.get(exam.id, 0) }} Marks</span>
+                                                </div>
+                                                <a href="/student/exam/result/{{ attempt.id }}/" class="btn btn-outline btn-pill"><i class="fas fa-eye"></i> View Corrections</a>
+                                            </div>
+                                        {% else %}
+                                            <span class="badge bg-secondary p-3" style="font-size: 14px;"><i class="fas fa-lock"></i> Submitted (Locked)</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div style="font-size: 50px; color: #94a3b8;" class="mb-3">
+                                <i class="fas fa-folder-open"></i>
+                            </div>
+                            <h5 class="text-muted">No exams assigned to your Class at this time!</h5>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Announcements Panel -->
+        <div class="col-lg-4 mb-4">
+            <div class="vbs-card p-4" style="background-color: var(--white);">
+                <h4 class="fw-bold mb-3" style="color: var(--primary); font-family: var(--font-heading);"><i class="fas fa-bullhorn"></i> Announcements</h4>
+                <hr class="mb-4">
+                
+                {% for ann in announcements %}
+                    <div class="p-3 mb-3" style="border-radius: var(--border-radius-sm); background-color: var(--bg-main);">
+                        <h6 class="fw-bold mb-1">{{ ann.title }}</h6>
+                        <p class="small text-muted mb-2">{{ ann.content }}</p>
+                        <div class="text-end text-muted" style="font-size: 10px;">
+                            <i class="far fa-clock"></i> {{ ann.created_at.strftime('%d %b, %H:%M') }}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-info-circle mb-2" style="font-size: 24px;"></i>
+                        <div>No VBS board updates today!</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

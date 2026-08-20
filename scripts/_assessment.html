@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grades - VBS Champions</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.min.css">
+    <!-- FontAwesome CSS -->
+    <link rel="stylesheet" href="/static/fontawesome/css/all.min.css">
+    <!-- Global Custom CSS -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    
+<link rel="stylesheet" href="/static/css/dashboard.css">
+
+
+</head>
+<body>
+
+    <!-- Main Navigation Bar -->
+    
+    <nav class="main-navbar">
+        <div class="container navbar-container">
+            <a href="/" class="brand">
+                <i class="fas fa-cross"></i> VBS <span>Champions</span>
+            </a>
+            
+            <ul class="nav-links">
+                
+                    
+                        <li><a href="/teacher/dashboard/" class="nav-link">Teacher Panel</a></li>
+                    
+                    <li><a href="/user/logout/" class="btn btn-danger btn-pill py-2 px-3 text-white"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                
+            </ul>
+        </div>
+    </nav>
+    
+
+    <!-- Flashed System Messages -->
+    <div class="container alert-container">
+        
+            
+                
+                    <div class="vbs-alert vbs-alert-feedback alert-dismissible fade show" role="alert">
+                        
+                            <i class="fas fa-check-circle"></i>
+                        
+                        <div>Welcome! Login successful.</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="margin-left:auto;"></button>
+                    </div>
+                
+            
+        
+    </div>
+
+    <!-- Main Page Content Body -->
+    <main class="flex-grow-1">
+        
+<div class="dashboard-wrapper">
+    <!-- Sidebar navigation -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-cross text-warning"></i> VBS <span>Teacher</span>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item ">
+                <a href="/teacher/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            </li>
+            <li class="sidebar-menu-item ">
+                <a href="/teacher/students/"><i class="fas fa-user-graduate"></i> Manage Students</a>
+            </li>
+            <li class="sidebar-menu-item ">
+                <a href="/teacher/skills/"><i class="fas fa-tools"></i> Skill Acquisition</a>
+            </li>
+            <li class="sidebar-menu-item active">
+                <a href="/teacher/assessment/"><i class="fas fa-star"></i> Grades</a>
+            </li>
+            <li class="sidebar-menu-item ">
+                <a href="/teacher/question-banks/"><i class="fas fa-database"></i> Question Banks</a>
+            </li>
+            <li class="sidebar-menu-item ">
+                <a href="/teacher/exams/"><i class="fas fa-scroll"></i> Exam Builder</a>
+            </li>
+            <li class="sidebar-menu-item ">
+                <a href="/teacher/exams/monitor/"><i class="fas fa-video"></i> Live Monitor</a>
+            </li>
+        </ul>
+        
+        <!-- User info block at bottom -->
+        <div class="sidebar-user">
+            <img src="/static/uploads/default-avatar.svg" 
+                 class="sidebar-user-avatar" alt="Avatar">
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-name">sean</div>
+                <div class="sidebar-user-role">Class Instructor</div>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Main page workspace -->
+    <main class="dashboard-content">
+        
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-toggle-grade-weights]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const form = document.querySelector('.grade-weights-form');
+            if (!form) return;
+            form.classList.toggle('d-none');
+            button.textContent = form.classList.contains('d-none') ? 'Edit Grade Weight' : 'Hide Grade Weight';
+        });
+    });
+
+    document.querySelectorAll('[data-toggle-manual-form]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const form = button.nextElementSibling;
+            if (!form) return;
+            form.classList.toggle('d-none');
+            button.textContent = form.classList.contains('d-none') ? 'Quick edit' : 'Hide form';
+        });
+    });
+});
+</script>
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Grades</h1>
+        <p class="text-muted mb-0">Review student performance by class and manage the grade weighting used for each class.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="vbs-card p-4" style="border-top: 5px solid var(--secondary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-sliders-h"></i> Grade Weights</h4>
+            <hr class="mb-4">
+
+            
+                <div class="mb-3">
+                    <div class="fw-bold text-primary">Primary Red Room</div>
+                    <div class="text-muted small">Manual 40.0% • CBT 60.0%</div>
+                    <div class="text-muted small">Mode: Both</div>
+                </div>
+                <button type="button" class="btn btn-secondary w-100 btn-lg py-3 mb-3" data-toggle-grade-weights>
+                    <i class="fas fa-edit"></i> Edit Grade Weight
+                </button>
+            
+
+            <form action="/teacher/assessment/" method="POST" class="grade-weights-form d-none">
+                <input type="hidden" name="csrf_token" value="">
+                <input type="hidden" name="action" value="save_weights">
+
+                <div class="form-group">
+                    <label class="form-label" for="class_id">Select Class <span class="text-danger">*</span></label>
+                    <select name="class_id" id="class_id" class="form-control" required>
+                        <option value="" disabled selected>Choose class...</option>
+                        
+                            <option value="2" selected>Primary Red Room</option>
+                        
+                            <option value="3" >Juniors Blue Room</option>
+                        
+                            <option value="9" >V-A</option>
+                        
+                            <option value="10" >V-B</option>
+                        
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="manual_grade_weight">Manual Weight (%)</label>
+                    <input type="number" min="0" max="100" step="1" name="manual_grade_weight" id="manual_grade_weight" class="form-control" value="40.0" required>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="cbt_grade_weight">CBT Weight (%)</label>
+                    <input type="number" min="0" max="100" step="1" name="cbt_grade_weight" id="cbt_grade_weight" class="form-control" value="60.0" required>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="assessment_method">Assessment Mode</label>
+                    <select name="assessment_method" id="assessment_method" class="form-control" required>
+                        <option value="manual" >Manual</option>
+                        <option value="cbt" >CBT</option>
+                        <option value="both" selected>Both</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-secondary w-100 btn-lg py-3"><i class="fas fa-save"></i> Save class grade weights</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8 mb-4">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3"><i class="fas fa-list text-primary"></i> Student Grades</h4>
+            <hr class="mb-4">
+
+            
+                <div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <strong>Primary Red Room</strong>
+                        <span class="text-muted">• Manual 40.0% • CBT 60.0%</span>
+                    </div>
+                    <a href="/teacher/assessment/" class="btn btn-outline btn-sm">Choose another class</a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="vbs-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Mode</th>
+                                <th>Manual</th>
+                                <th>CBT</th>
+                                <th>Final</th>
+                                <th>Comment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                                <tr>
+                                    <td class="fw-bold">Auto Student</td>
+                                    <td>
+                                        <span class="badge badge-secondary">Pending</span>
+                                        
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-primary mb-1">Pending</div>
+                                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-toggle-manual-form>Quick edit</button>
+                                        <form action="/teacher/assessment/" method="POST" class="manual-score-form mt-2 d-none">
+                                            <input type="hidden" name="csrf_token" value="">
+                                            <input type="hidden" name="action" value="save_manual_score">
+                                            <input type="hidden" name="class_id" value="2">
+                                            <input type="hidden" name="student_id" value="6">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input type="text" inputmode="numeric" pattern="^[0-9]*[.]?[0-9]*$" name="manual_score" class="form-control form-control-sm" value="" placeholder="Score" maxlength="5" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'); if (this.value.includes('.')) { var parts = this.value.split('.'); this.value = parts[0].slice(0,3) + '.' + parts.slice(1).join('').slice(0,2); } else { this.value = this.value.slice(0,3); }">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                                            </div>
+                                            <textarea name="manual_comment" class="form-control form-control-sm mt-2" rows="2" placeholder="Comment"></textarea>
+                                        </form>
+                                    </td>
+                                    <td>Pending</td>
+                                    <td><span class="badge badge-success">Pending</span></td>
+                                    <td class="small text-muted">No grade recorded yet.</td>
+                                </tr>
+                            
+                                <tr>
+                                    <td class="fw-bold">new guy</td>
+                                    <td>
+                                        <span class="badge badge-warning">Manual Pending</span>
+                                        
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-primary mb-1">210.0</div>
+                                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-toggle-manual-form>Quick edit</button>
+                                        <form action="/teacher/assessment/" method="POST" class="manual-score-form mt-2 d-none">
+                                            <input type="hidden" name="csrf_token" value="">
+                                            <input type="hidden" name="action" value="save_manual_score">
+                                            <input type="hidden" name="class_id" value="2">
+                                            <input type="hidden" name="student_id" value="4">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input type="text" inputmode="numeric" pattern="^[0-9]*[.]?[0-9]*$" name="manual_score" class="form-control form-control-sm" value="210.0" placeholder="Score" maxlength="5" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'); if (this.value.includes('.')) { var parts = this.value.split('.'); this.value = parts[0].slice(0,3) + '.' + parts.slice(1).join('').slice(0,2); } else { this.value = this.value.slice(0,3); }">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                                            </div>
+                                            <textarea name="manual_comment" class="form-control form-control-sm mt-2" rows="2" placeholder="Comment">CBT score pending.</textarea>
+                                        </form>
+                                    </td>
+                                    <td>Pending</td>
+                                    <td><span class="badge badge-success">Pending</span></td>
+                                    <td class="small text-muted">CBT score pending.</td>
+                                </tr>
+                            
+                                <tr>
+                                    <td class="fw-bold">Prim One</td>
+                                    <td>
+                                        <span class="badge badge-primary">Both</span>
+                                        
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-primary mb-1">30.0</div>
+                                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-toggle-manual-form>Quick edit</button>
+                                        <form action="/teacher/assessment/" method="POST" class="manual-score-form mt-2 d-none">
+                                            <input type="hidden" name="csrf_token" value="">
+                                            <input type="hidden" name="action" value="save_manual_score">
+                                            <input type="hidden" name="class_id" value="2">
+                                            <input type="hidden" name="student_id" value="1">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input type="text" inputmode="numeric" pattern="^[0-9]*[.]?[0-9]*$" name="manual_score" class="form-control form-control-sm" value="30.0" placeholder="Score" maxlength="5" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1'); if (this.value.includes('.')) { var parts = this.value.split('.'); this.value = parts[0].slice(0,3) + '.' + parts.slice(1).join('').slice(0,2); } else { this.value = this.value.slice(0,3); }">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                                            </div>
+                                            <textarea name="manual_comment" class="form-control form-control-sm mt-2" rows="2" placeholder="Comment">Manual and CBT scores combined.</textarea>
+                                        </form>
+                                    </td>
+                                    <td>80.0</td>
+                                    <td><span class="badge badge-success">60.0</span></td>
+                                    <td class="small text-muted">Manual and CBT scores combined.</td>
+                                </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            
+        </div>
+    </div>
+</div>
+
+    </main>
+</div>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <p>&copy; 2026 VBS Examination and Student Management Platform. Built for Champions.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="/static/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Local JQuery -->
+    <script src="/static/jquery-4.0.0.min.js"></script>
+    
+    
+</body>
+</html>

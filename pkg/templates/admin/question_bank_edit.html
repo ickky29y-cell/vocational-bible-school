@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit Question Bank Classes - VBS Champions{% endblock %}
+
+{% block nav_banks %}active{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Edit Bank Classes</h1>
+        <p class="text-muted mb-0">Adjust which classes this question bank is shared with.</p>
+    </div>
+    <a href="/teacher/question-banks/{{ bank.id }}/" class="btn btn-outline btn-pill py-2 px-3"><i class="fas fa-arrow-left"></i> Back to Bank</a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-layer-group"></i> {{ bank.name }}</h4>
+            <hr class="mb-4">
+
+            <form action="/teacher/question-banks/{{ bank.id }}/edit/" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="class_ids">Assigned Classes <span class="text-danger">*</span></label>
+                    <select name="class_ids" id="class_ids" class="form-control" multiple required size="{{ classes|length if classes else 3 }}">
+                        {% for cls in classes %}
+                            <option value="{{ cls.id }}" {% if cls.id in selected_ids %}selected{% endif %}>{{ cls.name }} {% if cls.min_age or cls.max_age %}(Ages {{ cls.min_age or '?' }}–{{ cls.max_age or '?' }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple classes. The first selected class becomes the primary class.</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-lg py-3"><i class="fas fa-save"></i> Update Assignments</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

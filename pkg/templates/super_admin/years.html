@@ -1,0 +1,114 @@
+{% extends "super_admin/base.html" %}
+
+{% block title %}Manage VBS Years - VBS Champions{% endblock %}
+
+{% block nav_years %}active{% endblock %}
+
+{% block super_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">VBS Cycles & Archiving</h1>
+        <p class="text-muted mb-0">Define annual VBS years, themes, and configure CBT results release flags.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- VBS Year Creation Form -->
+    <div class="col-lg-4 mb-4">
+        <div class="vbs-card p-4" style="border-top: 5px solid var(--primary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-calendar-plus"></i> Create VBS Year</h4>
+            <hr class="mb-4">
+            
+            <form action="/super-admin/years/" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+                <div class="form-group">
+                    <label class="form-label" for="year">VBS Year (Calendar) <span class="text-danger">*</span></label>
+                    <input type="number" name="year" id="year" class="form-control" required placeholder="e.g. 2026" min="2020" max="2050">
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="theme">VBS Year Theme <span class="text-danger">*</span></label>
+                    <input type="text" name="theme" id="theme" class="form-control" required placeholder="e.g. Champions for Christ">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-lg py-3"><i class="fas fa-plus-circle"></i> Initialize Year</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- VBS Years Archive Table -->
+    <div class="col-lg-8 mb-4">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3"><i class="fas fa-folder-open text-primary"></i> VBS Historical Log</h4>
+            <hr class="mb-4">
+            
+            <div class="table-responsive">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Theme</th>
+                            <th>Active VBS</th>
+                            <th>CBT Scores</th>
+                            <th>Action Trigger</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for yr in years %}
+                            <tr>
+                                <td class="fw-bold text-primary" style="font-size: 18px;"><i class="far fa-calendar-alt text-muted"></i> {{ yr.year }}</td>
+                                <td><span class="fw-bold text-dark">{{ yr.theme }}</span></td>
+                                <td>
+                                    {% if yr.is_active %}
+                                        <span class="badge badge-success"><i class="fas fa-check-circle"></i> Active Theme</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-muted"><i class="far fa-circle"></i> Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if yr.results_released %}
+                                        <span class="badge badge-info"><i class="fas fa-lock-open"></i> Released</span>
+                                    {% else %}
+                                        <span class="badge badge-danger"><i class="fas fa-lock"></i> Locked</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="actions-cell">
+                                        {% if not yr.is_active %}
+                                            <form action="/super-admin/years/activate/{{ yr.id }}/" method="POST" style="display:inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                                <button type="submit" class="btn btn-outline btn-pill py-1 px-3" style="font-size: 12px;" title="Activate this Year Theme">
+                                                    <i class="fas fa-toggle-on text-success"></i> Activate
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <form action="/super-admin/years/release/{{ yr.id }}/" method="POST" style="display:inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                                <button type="submit" class="btn {% if yr.results_released %}btn-danger{% else %}btn-secondary{% endif %} btn-pill py-1 px-3" style="font-size: 12px;">
+                                                    {% if yr.results_released %}
+                                                        <i class="fas fa-lock"></i> Lock Scores
+                                                    {% else %}
+                                                        <i class="fas fa-lock-open"></i> Release Scores
+                                                    {% endif %}
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-5">
+                                    <i class="fas fa-calendar-times d-block mb-3" style="font-size: 40px; color: #cbd5e1;"></i>
+                                    No VBS Cycles initialized.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

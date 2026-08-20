@@ -1,0 +1,144 @@
+{% extends "super_admin/base.html" %}
+
+{% block title %}Chaplain Dashboard - VBS Champions{% endblock %}
+
+{% block nav_dash %}active{% endblock %}
+
+{% block super_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Chaplain Control Panel</h1>
+        <p class="text-muted mb-0">Oversee church education sessions, teacher accounts, and VBS quiz scores.</p>
+    </div>
+    {% if active_year %}
+        <span class="badge bg-primary p-3" style="font-size: 14px;"><i class="fas fa-calendar-check"></i> Theme: {{ active_year.theme }} ({{ active_year.year }})</span>
+    {% endif %}
+</div>
+
+<!-- Super Metrics Dashboard Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-info">
+            <div class="stat-card-title">VBS Cycles</div>
+            <div class="stat-card-value">{{ total_years }}</div>
+        </div>
+        <div class="stat-card-icon primary">
+            <i class="fas fa-history"></i>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-card-info">
+            <div class="stat-card-title">VBS Teachers</div>
+            <div class="stat-card-value">{{ total_teachers }}</div>
+        </div>
+        <div class="stat-card-icon success">
+            <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-info">
+            <div class="stat-card-title">VBS Classes</div>
+            <div class="stat-card-value">{{ total_classes }}</div>
+        </div>
+        <div class="stat-card-icon secondary">
+            <i class="fas fa-school"></i>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-info">
+            <div class="stat-card-title">Active Pupils</div>
+            <div class="stat-card-value">{{ total_students }}</div>
+        </div>
+        <div class="stat-card-icon accent">
+            <i class="fas fa-users"></i>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-info">
+            <div class="stat-card-title">Avg CBT Score</div>
+            <div class="stat-card-value">{{ avg_score }}</div>
+        </div>
+        <div class="stat-card-icon primary">
+            <i class="fas fa-chart-line"></i>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Publish Announcement Column -->
+    <div class="col-lg-5 mb-4">
+        <div class="vbs-card p-4 mb-4" style="border-top: 5px solid var(--primary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-plus"></i> Post Announcement</h4>
+            <hr class="mb-3">
+            <form action="/super-admin/announcements/add/" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+                <div class="form-group">
+                    <label class="form-label" for="title">Title <span class="text-danger">*</span></label>
+                    <input type="text" name="title" id="title" class="form-control" required placeholder="Graduation details">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="content">Announcement Message <span class="text-danger">*</span></label>
+                    <textarea name="content" id="content" class="form-control" rows="3" required placeholder="Announcement content here..."></textarea>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="target_role">Audience <span class="text-danger">*</span></label>
+                    <select name="target_role" id="target_role" class="form-control" required>
+                        <option value="all">Everyone</option>
+                        <option value="teacher">Teachers Only</option>
+                        <option value="student">Students Only</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-bullhorn"></i> Publish Announcement</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Audit logs summary table -->
+    <div class="col-lg-7 mb-4">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3"><i class="fas fa-history text-secondary"></i> Recent System Activity</h4>
+            <hr class="mb-4">
+            
+            <div class="table-responsive">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Time</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for audit in recent_audits %}
+                            <tr>
+                                <td class="audit-log-text">
+                                    <div class="fw-bold text-dark">{{ audit.action }}</div>
+                                    <div class="small text-muted">{{ audit.details or '' }}</div>
+                                </td>
+                                <td class="small">{{ audit.timestamp.strftime('%d %b, %H:%M') }}</td>
+                                <td class="font-monospace small">{{ audit.ip_address or 'localhost' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-5">No log entries recorded yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="text-end">
+                <a href="/super-admin/audit-logs/" class="btn btn-outline btn-pill py-2 px-4" style="font-size: 14px;"><i class="fas fa-eye"></i> View All Audit Logs</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

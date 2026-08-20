@@ -1,0 +1,38 @@
+{% extends 'super_admin/base.html' %}
+
+{% block title %}Edit Category - VBS{% endblock %}
+
+{% block admin_content %}
+<div class="vbs-card p-4">
+    <h4 class="fw-bold mb-3">Edit Category: {{ category.name }}</h4>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.name.label(class_='form-label') }}
+            {{ form.name(class_='form-control') }}
+        </div>
+        <div class="mb-3 row">
+            <div class="col">
+                {{ form.min_age.label(class_='form-label') }}
+                {{ form.min_age(class_='form-control') }}
+            </div>
+            <div class="col">
+                {{ form.max_age.label(class_='form-label') }}
+                {{ form.max_age(class_='form-control') }}
+            </div>
+        </div>
+        <div class="mb-3">
+            {{ form.assessment_method.label(class_='form-label') }}
+            {{ form.assessment_method(class_='form-select') }}
+        </div>
+        <div class="mb-3">
+            {{ form.description.label(class_='form-label') }}
+            {{ form.description(class_='form-control', rows=3) }}
+        </div>
+        <div>
+            {{ form.submit(class_='btn btn-primary') }}
+            <a href="{{ url_for('super_admin_categories') }}" class="btn btn-link">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

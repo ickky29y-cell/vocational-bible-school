@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}VBS Exam in Progress - {{ exam.title }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/child-cbt.css') }}">
+<style>
+    /* Prevent viewing navbar during exam to stop accidental escapes */
+    .main-navbar {
+        display: none !important;
+    }
+    body {
+        padding-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block navbar %}{% endblock %} {# Hide navigation during active exam #}
+
+{% block content %}
+<div class="container my-5 cbt-body">
+    <!-- Playful Header -->
+    <div class="cbt-header">
+        {% if test_mode %}<div class="alert alert-warning"><i class="fas fa-vial"></i> Test Mode: This attempt will not be recorded.</div>{% endif %}
+        <h2 class="cbt-title"><i class="fas fa-crown"></i> VBS Quiz Adventure</h2>
+        <h5 class="text-muted">{{ exam.title }}</h5>
+    </div>
+
+    <!-- Sticky Timer Pill -->
+    <div id="timer" class="timer-pill">
+        <i class="fas fa-hourglass-start"></i> <span id="timer-display">--:--</span>
+    </div>
+
+    <!-- CBT Main Interactive Card -->
+    <div class="cbt-card">
+        <!-- Progress Indicator -->
+        <div class="d-flex justify-content-between align-items-center mb-2 small fw-bold text-muted">
+            <span>Quiz Progress</span>
+            <span id="progress-text">0 / {{ questions|length }} Answered</span>
+        </div>
+        <div class="cbt-progress-container">
+            <div id="progress-bar" class="cbt-progress-bar" style="width: 0%;"></div>
+        </div>
+
+        <!-- Hidden submit form -->
+        <form action="{% if test_mode %}/teacher/exams/preview/{{ exam.id }}/submit/{% else %}/student/exam/submit/{{ attempt.id }}/{% endif %}" method="POST" id="exam-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+            <!-- Questions Container -->
+            <div id="questions-wrapper">
+                {% for q in questions %}
+                    <div class="q-card-item" data-q-idx="{{ loop.index0 }}" data-aq-id="{{ q.aq_id }}" style="display: {% if loop.index0 == 0 %}block{% else %}none{% endif %};">
+                        
+                        <div class="question-meta">
+                            <span>Question {{ loop.index }} of {{ questions|length }}</span>
+                            <span class="bg-secondary text-white">{{ exam.title }}</span>
+                        </div>
+
+                        {% if q.image %}
+                            <img src="{{ url_for('serve_question_image', filename=q.image) }}" class="question-image mx-auto" alt="Question Image">
+                        {% endif %}
+
+                        <div class="question-text">{{ q.text }}</div>
+
+                        {% if q.bible_ref %}
+                            <div class="question-reference">
+                                <i class="fas fa-bible text-warning"></i> Bible Verse Reference: <strong>{{ q.bible_ref }}</strong>
+                            </div>
+                        {% endif %}
+
+                        <!-- Shuffled Options Grid -->
+                        <div class="options-grid">
+                            {% for opt in q.options %}
+                                <div class="option-wrapper">
+                                    <input type="radio" 
+                                           name="q_option_{{ q.aq_id }}" 
+                                           id="opt_{{ q.aq_id }}_{{ opt.letter }}" 
+                                           value="{{ opt.letter }}" 
+                                           class="option-input q-option-radio"
+                                           data-aq-id="{{ q.aq_id }}"
+                                           {% if q.selected == opt.letter %}checked{% endif %}>
+                                    <label for="opt_{{ q.aq_id }}_{{ opt.letter }}" class="option-label">
+                                        <span class="option-letter">{{ opt.letter }}</span>
+                                        <span>{{ opt.text }}</span>
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Bottom Navigation buttons -->
+            <div class="navigation-bar">
+                <button type="button" id="prev-btn" class="btn btn-outline btn-pill py-2 px-4" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                
+                <button type="button" id="submit-prompt-btn" class="btn btn-secondary btn-pill py-2 px-4" style="display: none;">
+                    <i class="fas fa-check-circle"></i> Submit Exam
+                </button>
+
+                <button type="button" id="next-btn" class="btn btn-primary btn-pill py-2 px-4">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </form>
+
+        <!-- Circular Quick Navigation Index Grid -->
+        <hr class="my-4">
+        <div class="text-center small text-muted mb-2 fw-bold">Jump directly to a Question:</div>
+        <div class="question-nav-grid">
+            {% for q in questions %}
+                <button type="button" class="q-nav-circle {% if q.selected %}answered{% endif %} {% if loop.index0 == 0 %}active{% endif %}" 
+                        data-target-idx="{{ loop.index0 }}" id="nav-circle-{{ loop.index0 }}">
+                    {{ loop.index }}
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Submit Confirmation Modal -->
+<div class="modal fade" id="submitConfirmModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="submitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--border-radius-lg); border: 3px solid var(--primary);">
+            <div class="modal-header border-0 text-center d-block pt-4">
+                <div style="font-size: 50px; color: var(--secondary);" class="mb-2">
+                    <i class="fas fa-award"></i>
+                </div>
+                <h4 class="modal-title fw-bold text-primary" id="submitModalLabel">Are you ready to submit?</h4>
+            </div>
+            <div class="modal-body text-center text-muted px-4">
+                You have completed your VBS quiz journey. Make sure to double check any empty questions before submitting! You cannot change your answers after submission.
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-outline btn-pill py-2 px-4" data-bs-dismiss="modal">Go Back</button>
+                <button type="button" id="confirm-submit-btn" class="btn btn-primary btn-pill py-2 px-5">Yes, I am Done!</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    let currentIdx = 0;
+    const totalQuestions = {{ questions|length }};
+    let remainingSeconds = {{ remaining_seconds }};
+    const attemptId = {{ attempt.id }};
+    const testMode = {{ 'true' if test_mode else 'false' }};
+
+    // Update screen view based on question index
+    function showQuestion(index) {
+        $('.q-card-item').hide();
+        $(`.q-card-item[data-q-idx="${index}"]`).show();
+
+        // Update nav circles active state
+        $('.q-nav-circle').removeClass('active');
+        $(`#nav-circle-${index}`).addClass('active');
+
+        // Toggle disabled states
+        $('#prev-btn').prop('disabled', index === 0);
+
+        if (index === totalQuestions - 1) {
+            $('#next-btn').hide();
+            $('#submit-prompt-btn').show();
+        } else {
+            $('#next-btn').show();
+            $('#submit-prompt-btn').hide();
+        }
+        currentIdx = index;
+    }
+
+    // Next/Prev click handlers
+    $('#next-btn').click(function() {
+        if (currentIdx < totalQuestions - 1) {
+            showQuestion(currentIdx + 1);
+        }
+    });
+
+    $('#prev-btn').click(function() {
+        if (currentIdx > 0) {
+            showQuestion(currentIdx - 1);
+        }
+    });
+
+    // Circular nav indicators click handler
+    $('.q-nav-circle').click(function() {
+        let idx = $(this).data('target-idx');
+        showQuestion(idx);
+    });
+
+    // Radio option click handler for autosave
+    $('.q-option-radio').change(function() {
+        let aqId = $(this).data('aq-id');
+        let val = $(this).val();
+
+        // Update nav circle and progress immediately (optimistic UI)
+        $(`#nav-circle-${currentIdx}`).addClass('answered');
+        updateProgress();
+
+        // Send fetch API save request
+        if (testMode) {
+            return;
+        }
+
+        fetch(`/student/exam/autosave/${attemptId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                aq_id: aqId,
+                selected_option: val
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                console.error("Autosave failed: ", data.error);
+                // Visual feedback of connection issue
+                $(`#nav-circle-${currentIdx}`).removeClass('answered');
+                updateProgress();
+            }
+        })
+        .catch(err => {
+            console.error("Connection error during autosave:", err);
+            $(`#nav-circle-${currentIdx}`).removeClass('answered');
+            updateProgress();
+            alert("Connection lost. Please make sure you are online before continuing!");
+        });
+    });
+
+    // Update progress bar
+    function updateProgress() {
+        let answeredCount = $('.q-nav-circle.answered').length;
+        let percentage = (answeredCount / totalQuestions) * 100;
+        $('#progress-bar').css('width', percentage + '%');
+        $('#progress-text').text(`${answeredCount} / ${totalQuestions} Answered`);
+    }
+
+    // Modal submit prompt trigger
+    $('#submit-prompt-btn').click(function() {
+        let confirmModal = new bootstrap.Modal(document.getElementById('submitConfirmModal'));
+        confirmModal.show();
+    });
+
+    $('#confirm-submit-btn').click(function() {
+        $('#exam-form').submit();
+    });
+
+    // Countdown Timer logic
+    function startTimer() {
+        let timerInterval = setInterval(function() {
+            if (remainingSeconds <= 0) {
+                clearInterval(timerInterval);
+                alert("Time is up! Your answers are being submitted automatically.");
+                $('#exam-form').submit();
+                return;
+            }
+
+            remainingSeconds--;
+
+            let mins = Math.floor(remainingSeconds / 60);
+            let secs = remainingSeconds % 60;
+            
+            let displayMins = mins < 10 ? '0' + mins : mins;
+            let displaySecs = secs < 10 ? '0' + secs : secs;
+
+            $('#timer-display').text(displayMins + ':' + displaySecs);
+
+            // Warning style if under 1 minute remaining
+            if (remainingSeconds < 60) {
+                $('#timer').addClass('warning');
+            }
+        }, 1000);
+    }
+
+    // Initialize display states
+    updateProgress();
+    startTimer();
+    showQuestion(0);
+});
+</script>
+{% endblock %}

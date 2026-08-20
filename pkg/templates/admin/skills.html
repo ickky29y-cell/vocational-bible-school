@@ -1,0 +1,54 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Skill Acquisition - VBS Champions{% endblock %}
+{% block nav_skills %}active{% endblock %}
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Skill Acquisition</h1>
+        <p class="text-muted mb-0">Manage optional skills for {{ active_year.year }}. Students may leave skill blank.</p>
+    </div>
+</div>
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="vbs-card p-4" style="border-top:5px solid var(--primary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-plus"></i> Add Skill</h4>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                <input type="hidden" name="action" value="create">
+                <div class="form-group">
+                    <label class="form-label" for="name">Skill Name</label>
+                    <input class="form-control" name="name" id="name" required placeholder="e.g. Computer">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="description">Description</label>
+                    <textarea class="form-control" name="description" id="description" rows="3"></textarea>
+                </div>
+                <button class="btn btn-primary w-100" type="submit">Add Skill</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3 text-primary">Available Skills</h4>
+            {% for skill in skills %}
+                <div class="border rounded p-3 mb-3">
+                    <form method="POST" class="row g-2 align-items-end">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                        <input type="hidden" name="action" value="edit">
+                        <input type="hidden" name="skill_id" value="{{ skill.id }}">
+                        <div class="col-md-4"><label class="form-label small">Name</label><input class="form-control" name="name" value="{{ skill.name }}" required></div>
+                        <div class="col-md-5"><label class="form-label small">Description</label><input class="form-control" name="description" value="{{ skill.description or '' }}"></div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button class="btn btn-secondary" type="submit">Save</button>
+                            <button class="btn btn-outline-danger" type="submit" name="action" value="delete" onclick="return confirm('Remove this skill? Existing banks will remain normal banks.');">Remove</button>
+                        </div>
+                    </form>
+                </div>
+            {% else %}
+                <p class="text-muted">No skills have been added for this VBS year.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

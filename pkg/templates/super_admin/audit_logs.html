@@ -1,0 +1,72 @@
+{% extends "super_admin/base.html" %}
+
+{% block title %}Audit Trail - VBS Champions{% endblock %}
+
+{% block nav_audits %}active{% endblock %}
+
+{% block super_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Audit Trail Logs</h1>
+        <p class="text-muted mb-0">Inspect chronological list of operations, time stamps, user identities, and IP addresses.</p>
+    </div>
+</div>
+
+<!-- Audit Trail Table card -->
+<div class="vbs-card p-4">
+    <h4 class="fw-bold mb-3"><i class="fas fa-history text-primary"></i> System Activity Log</h4>
+    <hr class="mb-4">
+
+    <div class="table-responsive">
+        <table class="vbs-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Action Done</th>
+                    <th>Description details</th>
+                    <th>IP Address</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>
+                            {% if log.user %}
+                                <div class="fw-bold">{{ log.user.username }}</div>
+                                <span class="badge bg-secondary" style="font-size: 10px;">{{ log.user.role.name }}</span>
+                            {% else %}
+                                <span class="text-muted">Anonymous/Guest</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if 'FAILED' in log.action or 'DELETE' in log.action %}
+                                    badge-danger
+                                {% elif 'START' in log.action or 'REGISTER' in log.action %}
+                                    badge-warning
+                                {% elif 'LOGIN' in log.action or 'SUBMIT' in log.action %}
+                                    badge-success
+                                {% else %}
+                                    badge-info
+                                {% endif %}">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td class="small">{{ log.details or 'No remarks' }}</td>
+                        <td class="font-monospace small text-muted"><i class="fas fa-laptop-code text-muted me-1"></i> {{ log.ip_address or 'localhost' }}</td>
+                        <td class="small">{{ log.timestamp.strftime('%d %b, %Y - %I:%M %p') }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i class="fas fa-history d-block mb-3" style="font-size: 40px; color: #cbd5e1;"></i>
+                            No logs found.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

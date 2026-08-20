@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}{{ student.first_name }} {{ student.last_name }} - Result{% endblock %}
+
+{% block styles %}
+<style>
+    .result-sheet { max-width: 980px; margin: 32px auto; background: #fff; border: 1px solid #dbe3ef; box-shadow: 0 18px 50px rgba(15, 23, 42, .10); }
+    .result-masthead { background: #102a43; color: #fff; padding: 32px 36px; border-bottom: 6px solid #f2b84b; }
+    .result-kicker { color: #f2b84b; letter-spacing: .12em; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    .result-summary { background: #f5f8fc; border-bottom: 1px solid #dbe3ef; padding: 24px 36px; }
+    .result-stat { border-left: 4px solid #2f80ed; padding-left: 14px; }
+    .result-section { padding: 24px 36px; }
+    .result-table th { background: #102a43; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .result-table td, .result-table th { padding: 12px 14px; vertical-align: middle; }
+    .result-signature { border-top: 1px solid #94a3b8; width: 220px; padding-top: 8px; color: #475569; }
+    .print-toolbar { max-width: 980px; margin: 24px auto 0; display: flex; justify-content: flex-end; gap: 10px; }
+    @media print {
+        @page { size: A4; margin: 12mm; }
+        body { background: #fff !important; }
+        .main-navbar, .print-toolbar, body > footer { display: none !important; }
+        .result-sheet { margin: 0; max-width: none; border: 0; box-shadow: none; }
+        .result-masthead, .result-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .result-section, .result-summary { break-inside: avoid; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="print-toolbar">
+    <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+    <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Print Result</button>
+</div>
+
+<article class="result-sheet">
+    <header class="result-masthead">
+        <div class="result-kicker">VBS Champions</div>
+        <h1 class="h2 mb-2">Student Result Statement</h1>
+        <div class="opacity-75">{{ active_year.theme }} &middot; VBS {{ active_year.year }}</div>
+    </header>
+
+    <section class="result-summary">
+        <div class="row g-4 align-items-center">
+            <div class="col-md-6">
+                <div class="small text-muted text-uppercase fw-bold">Student</div>
+                <div class="h4 mb-1">{{ student.first_name }} {{ student.last_name }}</div>
+                <div class="text-muted">Age {{ student.age }} &middot; {{ student_class.name }}</div>
+            </div>
+            <div class="col-md-3 result-stat">
+                <div class="small text-muted text-uppercase fw-bold">Result Type</div>
+                <div class="h5 mb-0">{{ result_type }}</div>
+            </div>
+            <div class="col-md-3 result-stat">
+                <div class="small text-muted text-uppercase fw-bold">Final Percentage</div>
+                <div class="h4 text-success mb-0">{{ final_percentage }}%</div>
+            </div>
+        </div>
+    </section>
+
+    {% if result_type == 'Combined' %}
+    <section class="result-section">
+        <h2 class="h5 fw-bold">Combined Result Summary</h2>
+        <table class="table result-table">
+            <thead><tr><th>Component</th><th>Score</th><th>Percentage</th><th>Weight</th></tr></thead>
+            <tbody>
+                <tr><td>Manual Assessment</td><td>{{ manual_earned|round(2) }} / {{ manual_possible }}</td><td>{{ manual_percentage }}%</td><td>{{ manual_weight }}%</td></tr>
+                <tr><td>CBT Assessment</td><td>{{ cbt_earned|round(2) }} / {{ cbt_possible|round(2) }}</td><td>{{ cbt_percentage }}%</td><td>{{ cbt_weight }}%</td></tr>
+                <tr class="fw-bold"><td>Final Combined Result</td><td colspan="2">{{ final_percentage }}%</td><td>100%</td></tr>
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    {% if cbt_results %}
+    <section class="result-section">
+        <h2 class="h5 fw-bold">CBT Exam Breakdown</h2>
+        <table class="table result-table">
+            <thead><tr><th>Exam</th><th>Date</th><th>Class</th><th>Score</th><th>Percentage</th></tr></thead>
+            <tbody>
+                {% for item in cbt_results %}
+                <tr>
+                    <td>{{ item.exam.title }}</td>
+                    <td>{{ item.attempt.end_time.strftime('%d %b %Y') if item.attempt.end_time else 'N/A' }}</td>
+                    <td>{{ student_class.name }}</td>
+                    <td>{{ item.earned|round(2) }} / {{ item.possible|round(2) }}</td>
+                    <td>{{ item.percentage }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    {% if manual_assessments %}
+    <section class="result-section">
+        <h2 class="h5 fw-bold">Manual Assessment Breakdown</h2>
+        <table class="table result-table">
+            <thead><tr><th>Skill</th><th>Score</th><th>Assessment Status</th><th>Teacher Comment</th></tr></thead>
+            <tbody>
+                {% for record in manual_assessments %}
+                <tr>
+                    <td>{{ record.skill.name }}</td>
+                    <td>{{ record.score|round(2) }} / 100</td>
+                    <td>Assessed</td>
+                    <td>{{ record.comments or 'No comment recorded.' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    <section class="result-section pt-2">
+        <div class="row g-5 mt-2">
+            <div class="col-md-6"><div class="result-signature">Teacher / Assessor Signature</div></div>
+            <div class="col-md-6"><div class="result-signature">Date Issued: {{ generated_at.strftime('%d %b %Y') }}</div></div>
+        </div>
+    </section>
+</article>
+{% endblock %}

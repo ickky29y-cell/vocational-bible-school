@@ -1,0 +1,185 @@
+{% extends "admin/base.html" %}
+
+{% block title %}View Bank Questions - VBS Champions{% endblock %}
+
+{% block nav_banks %}active{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">{{ bank.name }}</h1>
+        <p class="text-muted mb-0">
+            Class Assignments:
+            {% set bank_classes = [bank.class_] + (bank.assigned_classes or []) %}
+            {% for cls in bank_classes|unique %}
+                <span class="badge bg-secondary me-1">{{ cls.name }}</span>
+            {% endfor %}
+        </p>
+    </div>
+    <div>
+        <a href="/teacher/question-banks/" class="btn btn-outline btn-pill py-2 px-3"><i class="fas fa-arrow-left"></i> Back to Banks</a>
+        <a href="/teacher/question-banks/{{ bank.id }}/edit/" class="btn btn-primary btn-pill py-2 px-3 ml-2"><i class="fas fa-edit"></i> Edit Classes</a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Add Question Form -->
+    <div class="col-lg-5 mb-4">
+        <div class="vbs-card p-4" style="border-top: 5px solid var(--secondary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-plus"></i> Add Question</h4>
+            <hr class="mb-4">
+            
+            <form action="/teacher/question-banks/{{ bank.id }}/" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+                <div class="form-group">
+                    <label class="form-label" for="question_text">Question Content <span class="text-danger">*</span></label>
+                    <textarea name="question_text" id="question_text" class="form-control" rows="3" required placeholder="What is the first book of the Bible?"></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="bible_reference">Bible Verse Ref</label>
+                        <input type="text" name="bible_reference" id="bible_reference" class="form-control" placeholder="e.g. Genesis 1:1">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="question_image">Illustration Image</label>
+                        <input type="file" name="question_image" id="question_image" class="form-control" accept="image/*">
+                    </div>
+                </div>
+
+                <!-- Option entries -->
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="option_a">Option A <span class="text-danger">*</span></label>
+                        <input type="text" name="option_a" id="option_a" class="form-control" required placeholder="Genesis">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="option_b">Option B <span class="text-danger">*</span></label>
+                        <input type="text" name="option_b" id="option_b" class="form-control" required placeholder="Exodus">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="option_c">Option C <span class="text-danger">*</span></label>
+                        <input type="text" name="option_c" id="option_c" class="form-control" required placeholder="Leviticus">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="option_d">Option D <span class="text-danger">*</span></label>
+                        <input type="text" name="option_d" id="option_d" class="form-control" required placeholder="Numbers">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label class="form-label" for="correct_option">Correct option <span class="text-danger">*</span></label>
+                        <select name="correct_option" id="correct_option" class="form-control" required>
+                            <option value="A">Option A</option>
+                            <option value="B">Option B</option>
+                            <option value="C">Option C</option>
+                            <option value="D">Option D</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label class="form-label" for="difficulty">Difficulty</label>
+                        <select name="difficulty" id="difficulty" class="form-control">
+                            <option value="easy">Easy</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label class="form-label" for="marks">Marks Weight</label>
+                        <input type="number" name="marks" id="marks" class="form-control" min="1" max="10" value="1">
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="explanation">Review Explanation</label>
+                    <textarea name="explanation" id="explanation" class="form-control" rows="2" placeholder="Brief answer correction details..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-secondary w-100 btn-lg py-3"><i class="fas fa-check-circle"></i> Save Question</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Questions list in the bank -->
+    <div class="col-lg-7 mb-4">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3"><i class="fas fa-list text-primary"></i> Question List</h4>
+            <hr class="mb-4">
+            
+            <div class="table-responsive">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Correct</th>
+                            <th>Points</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for q in questions %}
+                            <tr id="q-row-{{ q.id }}">
+                                <td>
+                                    <div class="fw-bold text-truncate" style="max-width: 250px;">{{ q.question_text }}</div>
+                                    <span class="badge {% if q.difficulty == 'easy' %}badge-success{% elif q.difficulty == 'medium' %}badge-warning{% else %}badge-danger{% endif %}" style="font-size: 10px;">{{ q.difficulty }}</span>
+                                </td>
+                                <td><span class="badge badge-info">{{ q.correct_option }}</span></td>
+                                <td>{{ q.marks }} Marks</td>
+                                <td>
+                                    <div class="actions-cell">
+                                        <a href="/teacher/question-banks/question/edit/{{ q.id }}/" class="btn-icon btn-icon-primary" title="Edit Question Details">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn-icon btn-icon-danger archive-btn" data-q-id="{{ q.id }}" title="Archive Question">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-5">No questions in this bank yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.archive-btn').click(function() {
+        let qId = $(this).data('q-id');
+        if (confirm('Are you sure you want to remove this question from VBS question pool?')) {
+            fetch(`/teacher/question-banks/question/archive/${qId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    $(`#q-row-${qId}`).fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                } else {
+                    alert('Error removing question');
+                }
+            })
+            .catch(err => console.error("Error connecting to server:", err));
+        }
+    });
+});
+</script>
+{% endblock %}

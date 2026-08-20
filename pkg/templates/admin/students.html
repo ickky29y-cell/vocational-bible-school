@@ -1,0 +1,232 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Manage Students - VBS Champions{% endblock %}
+
+{% block nav_students %}active{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Manage Students</h1>
+        <p class="text-muted mb-0">Choose a class to manage its students.</p>
+    </div>
+    {% if selected_class_id %}
+    <button type="button" class="btn btn-primary btn-pill" data-bs-toggle="modal" data-bs-target="#registerStudentModal">
+        <i class="fas fa-plus"></i> Register Student
+    </button>
+    {% endif %}
+</div>
+
+{% if not selected_class_id %}
+<div class="row g-4">
+    {% for cls in classes %}
+    <div class="col-md-6 col-xl-4">
+        <a href="{{ url_for('teacher_students', class_id=cls.id) }}" class="text-decoration-none">
+            <div class="vbs-card h-100 p-4" style="border-top: 5px solid var(--primary);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="fw-bold mb-0 text-primary">{{ cls.name }}</h5>
+                    <span class="badge bg-light text-dark">{{ cls.assessment_method or 'CBT' }}</span>
+                </div>
+                <p class="text-muted mb-3">
+                    {% if cls.category %}{{ cls.category.name }}{% else %}Class{% endif %}
+                    {% if cls.min_age or cls.max_age %} • Ages {{ cls.min_age or '?' }}–{{ cls.max_age or '?' }}{% endif %}
+                </p>
+                <div class="small text-muted">
+                    <i class="fas fa-user-graduate me-1"></i>
+                    {{ cls.students|length }} students
+                </div>
+            </div>
+        </a>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="vbs-card p-5 text-center text-muted">No classes assigned to you yet.</div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="mb-3">
+    <a href="{{ url_for('teacher_students') }}" class="btn btn-outline btn-pill py-2 px-3"><i class="fas fa-arrow-left"></i> Back to Classes</a>
+</div>
+<div class="vbs-card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-1 text-primary">{{ selected_class.name }}</h4>
+            <div class="text-muted small">
+                {% if selected_class.category %}{{ selected_class.category.name }}{% endif %}
+                {% if selected_class.min_age or selected_class.max_age %} • Ages {{ selected_class.min_age or '?' }}–{{ selected_class.max_age or '?' }}{% endif %}
+                {% if selected_class.assessment_method %} • {{ selected_class.assessment_method|title }}{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="vbs-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>VBS Username</th>
+                    <th>Age</th>
+                    <th>Assigned Class</th>
+                    <th>Skill</th>
+                    <th>Parent Contact</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stud in students %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold">{{ stud.first_name }} {{ stud.last_name }}</span>
+                                <span class="badge {% if stud.gender == 'Male' %}bg-primary{% else %}bg-danger{% endif %} text-white" style="font-size: 10px; padding: 2px 6px;">{{ stud.gender[0] }}</span>
+                            </div>
+                        </td>
+                        <td class="font-monospace small">{{ stud.user.username }}</td>
+                        <td>{{ stud.age }} Years</td>
+                        <td><span class="badge badge-info">{{ stud.class_.name }}</span></td>
+                            <td>{{ stud.skill.name if stud.skill else 'None' }}</td>
+                        <td>
+                            <div class="small"><i class="fas fa-user-circle text-muted"></i> {{ stud.parent_name or 'N/A' }}</div>
+                            <div class="small text-muted"><i class="fas fa-phone-alt text-muted"></i> {{ stud.parent_phone or 'N/A' }}</div>
+                        </td>
+                        <td>
+                            <div class="actions-cell">
+                                <a href="/teacher/students/edit/{{ stud.id }}/" class="btn-icon btn-icon-primary" title="Edit Student Profile"><i class="fas fa-edit"></i></a>
+                                {% for attempt in attempts_by_student.get(stud.id, []) %}
+                                    <button type="button" class="btn-icon btn-icon-warning reset-attempt-btn" data-attempt-id="{{ attempt.id }}" data-student="{{ stud.first_name }} {{ stud.last_name }}" title="Reset {{ attempt.exam.title }}"><i class="fas fa-redo"></i></button>
+                                {% endfor %}
+                                <form action="/teacher/students/delete/{{ stud.id }}/" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this student record? This cannot be undone.');" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                    <button type="submit" class="btn-icon btn-icon-danger" title="Delete Account"><i class="fas fa-trash-alt"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="fas fa-users-slash d-block mb-3" style="font-size: 40px; color: #cbd5e1;"></i>
+                            No students registered in this class yet.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.querySelectorAll('.reset-attempt-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+        var reason = prompt('Reason for resetting this attempt for ' + button.dataset.student + ':', 'Network issue or approved retake');
+        if (reason === null) return;
+        fetch('/teacher/exams/reset-attempt/' + button.dataset.attemptId + '/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({reason: reason})
+        }).then(function(response) { return response.json(); }).then(function(result) {
+            if (result.success) location.reload();
+            else alert(result.error || 'Unable to reset attempt.');
+        });
+    });
+});
+</script>
+
+{% if selected_class_id %}
+<div class="modal fade" id="registerStudentModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--border-radius-md); border: 2px solid var(--primary);">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-primary" id="registerModalLabel"><i class="fas fa-user-plus"></i> Register VBS Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form action="/teacher/students/?class_id={{ selected_class_id }}" method="POST" id="student-reg-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                    <h5 class="fw-bold mb-3 text-secondary"><i class="fas fa-id-card"></i> Personal Profile</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="first_name">First Name <span class="text-danger">*</span></label>
+                            <input type="text" name="first_name" id="first_name" class="form-control" required placeholder="John">
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="last_name">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" name="last_name" id="last_name" class="form-control" required placeholder="Doe">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 form-group">
+                            <label class="form-label" for="age">Age <span class="text-danger">*</span></label>
+                            <input type="number" name="age" id="age" class="form-control" required min="2" max="18" placeholder="8">
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="form-label" for="gender">Gender <span class="text-danger">*</span></label>
+                            <select name="gender" id="gender" class="form-control" required>
+                                <option value="" disabled selected>Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="form-label" for="class_id">Assign VBS Class <span class="text-danger">*</span></label>
+                            <select name="class_id" id="class_id" class="form-control" required>
+                                {% for cls in classes %}
+                                <option value="{{ cls.id }}" {% if cls.id == selected_class_id %}selected{% endif %}>{{ cls.name }}{% if cls.min_age or cls.max_age %} (Ages {{ cls.min_age or '?' }}–{{ cls.max_age or '?' }}){% elif cls.category %} ({{ cls.category.name }}){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="skill_id">Skill Acquisition (Optional)</label>
+                        <select name="skill_id" id="skill_id" class="form-control">
+                            <option value="">No skill selected</option>
+                            {% for skill in skills or [] %}
+                                <option value="{{ skill.id }}">{{ skill.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Leave blank if this student is not taking a skill.</small>
+                    </div>
+                    <h5 class="fw-bold mt-4 mb-3 text-secondary"><i class="fas fa-users"></i> Parents Contact Details</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="parent_name">Parent/Guardian Name</label>
+                            <input type="text" name="parent_name" id="parent_name" class="form-control" placeholder="Mr. or Mrs. Doe">
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="parent_phone">Parent Phone Number</label>
+                            <input type="text" name="parent_phone" id="parent_phone" class="form-control" placeholder="e.g. +2348033221100">
+                        </div>
+                    </div>
+                    <h5 class="fw-bold mt-4 mb-3 text-secondary"><i class="fas fa-lock"></i> VBS Login Credentials</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="username">Portal Username <span class="text-danger">*</span></label>
+                            <input type="text" name="username" id="username" class="form-control" required placeholder="john_vbs">
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="email">Portal Email <span class="text-danger">*</span></label>
+                            <input type="email" name="email" id="email" class="form-control" required placeholder="john.doe@vbs.com">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="password">Password <span class="text-danger">*</span></label>
+                            <input type="password" name="password" id="password" class="form-control" required placeholder="Min 6 characters">
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="form-label" for="confirm_password">Confirm Password <span class="text-danger">*</span></label>
+                            <input type="password" name="confirm_password" id="confirm_password" class="form-control" required placeholder="Repeat password">
+                        </div>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-outline btn-pill py-2 px-4 me-2" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary btn-pill py-2 px-5">Submit Registration</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

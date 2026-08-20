@@ -1,0 +1,56 @@
+{% extends "super_admin/base.html" %}
+
+{% block title %}System Settings - VBS Champions{% endblock %}
+
+{% block nav_settings %}active{% endblock %}
+
+{% block super_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">System Settings</h1>
+        <p class="text-muted mb-0">Configure church preferences, theme branding accents, and general VBS rules.</p>
+    </div>
+</div>
+
+<div class="vbs-card p-4 p-md-5 mx-auto" style="max-width: 700px; border-top: 5px solid var(--primary);">
+    <h3 class="fw-bold mb-4 text-primary"><i class="fas fa-sliders-h"></i> System Configuration</h3>
+    <hr class="mb-4">
+
+    <form action="/super-admin/settings/" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+        {% for sett in settings %}
+            <div class="form-group mb-4">
+                <label class="form-label" for="{{ sett.key }}">
+                    {% if sett.key == 'church_name' %}
+                        <i class="fas fa-church text-muted me-1"></i> Church Name
+                    {% elif sett.key == 'accent_color' %}
+                        <i class="fas fa-palette text-muted me-1"></i> Accent Theme Color
+                    {% elif sett.key == 'system_rules' %}
+                        <i class="fas fa-file-signature text-muted me-1"></i> Exam Honor Code Guidelines
+                    {% else %}
+                        {{ sett.key|replace('_', ' ')|capitalize }}
+                    {% endif %}
+                </label>
+                
+                {% if sett.key == 'accent_color' %}
+                    <div class="d-flex gap-3 align-items-center">
+                        <input type="color" name="{{ sett.key }}" id="{{ sett.key }}" class="form-control" style="width: 80px; height: 50px; padding: 4px; cursor: pointer;" value="{{ sett.value }}">
+                        <span class="font-monospace small text-muted">{{ sett.value }} (Brand hex code)</span>
+                    </div>
+                {% elif sett.key == 'system_rules' %}
+                    <textarea name="{{ sett.key }}" id="{{ sett.key }}" class="form-control" rows="5" required>{{ sett.value }}</textarea>
+                {% else %}
+                    <input type="text" name="{{ sett.key }}" id="{{ sett.key }}" class="form-control" required value="{{ sett.value }}">
+                {% endif %}
+                
+                <div class="form-text text-muted small mt-1">{{ sett.description }}</div>
+            </div>
+        {% endfor %}
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn btn-primary btn-pill btn-lg px-5 py-3"><i class="fas fa-save"></i> Save Settings</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

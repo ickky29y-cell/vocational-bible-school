@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}
+{% block title %}Test Exam - VBS Champions{% endblock %}
+{% block admin_content %}
+<div class="dashboard-header">
+    <div><h1 class="dashboard-title">Test Exam</h1><p class="text-muted mb-0">Choose a student profile, then enter the same CBT interface students will use.</p></div>
+</div>
+<div class="vbs-card p-4" style="max-width:720px;">
+    <div class="alert alert-warning"><i class="fas fa-vial"></i> Test Mode: This attempt will not be recorded.</div>
+    <h4 class="fw-bold">{{ exam.title }}</h4>
+    <p class="text-muted mb-3">Confirm that skill questions appear for the matching student, no-skill students receive normal fallback questions, the total count stays the same, and questions are mixed.</p>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="{{ url_for('teacher_exam_preview', exam_id=exam.id, no_skill=1) }}">Student without a skill</a>
+        {% for skill_id, skill_name in skill_map.items() %}
+            <a class="btn btn-secondary" href="{{ url_for('teacher_exam_preview', exam_id=exam.id, skill_id=skill_id) }}">Student with {{ skill_name }}</a>
+        {% endfor %}
+    </div>
+    {% if not skill_map %}
+        <p class="small text-muted mt-3 mb-0">No skill banks are attached to this exam. Attach Computer, Catering, or other skill banks in Exam Rules to preview those scenarios.</p>
+    {% endif %}
+</div>
+{% endblock %}

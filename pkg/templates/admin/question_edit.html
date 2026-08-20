@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit Question - VBS Champions{% endblock %}
+
+{% block nav_banks %}active{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Edit Question</h1>
+        <p class="text-muted mb-0">Modify question configurations within: <span class="fw-bold">{{ bank.name }}</span></p>
+    </div>
+    <a href="/teacher/question-banks/{{ bank.id }}/" class="btn btn-outline btn-pill py-2 px-3"><i class="fas fa-arrow-left"></i> Cancel</a>
+</div>
+
+<div class="vbs-card p-4 p-md-5 mx-auto" style="max-width: 800px; border-top: 5px solid var(--primary);">
+    <form action="/teacher/question-banks/question/edit/{{ question.id }}/" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+        <div class="form-group">
+            <label class="form-label" for="question_text">Question Content</label>
+            <textarea name="question_text" id="question_text" class="form-control" rows="3" required>{{ question.question_text }}</textarea>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="bible_reference">Bible Verse Ref</label>
+                <input type="text" name="bible_reference" id="bible_reference" class="form-control" value="{{ question.bible_reference or '' }}">
+            </div>
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="question_image">Illustration Image (Replaces current)</label>
+                <input type="file" name="question_image" id="question_image" class="form-control" accept="image/*">
+            </div>
+        </div>
+
+        <!-- Options grid -->
+        <div class="row">
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="option_a">Option A</label>
+                <input type="text" name="option_a" id="option_a" class="form-control" required value="{{ question.option_a }}">
+            </div>
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="option_b">Option B</label>
+                <input type="text" name="option_b" id="option_b" class="form-control" required value="{{ question.option_b }}">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="option_c">Option C</label>
+                <input type="text" name="option_c" id="option_c" class="form-control" required value="{{ question.option_c }}">
+            </div>
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="option_d">Option D</label>
+                <input type="text" name="option_d" id="option_d" class="form-control" required value="{{ question.option_d }}">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 form-group">
+                <label class="form-label" for="correct_option">Correct option</label>
+                <select name="correct_option" id="correct_option" class="form-control">
+                    <option value="A" {% if question.correct_option == 'A' %}selected{% endif %}>Option A</option>
+                    <option value="B" {% if question.correct_option == 'B' %}selected{% endif %}>Option B</option>
+                    <option value="C" {% if question.correct_option == 'C' %}selected{% endif %}>Option C</option>
+                    <option value="D" {% if question.correct_option == 'D' %}selected{% endif %}>Option D</option>
+                </select>
+            </div>
+            <div class="col-md-4 form-group">
+                <label class="form-label" for="difficulty">Difficulty</label>
+                <select name="difficulty" id="difficulty" class="form-control">
+                    <option value="easy" {% if question.difficulty == 'easy' %}selected{% endif %}>Easy</option>
+                    <option value="medium" {% if question.difficulty == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="hard" {% if question.difficulty == 'hard' %}selected{% endif %}>Hard</option>
+                </select>
+            </div>
+            <div class="col-md-4 form-group">
+                <label class="form-label" for="marks">Marks Weight</label>
+                <input type="number" name="marks" id="marks" class="form-control" min="1" max="10" value="{{ question.marks }}">
+            </div>
+        </div>
+
+        <div class="form-group mb-4">
+            <label class="form-label" for="explanation">Review Explanation</label>
+            <textarea name="explanation" id="explanation" class="form-control" rows="2">{{ question.explanation or '' }}</textarea>
+        </div>
+
+        <div class="text-end mt-4">
+            <a href="/teacher/question-banks/{{ bank.id }}/" class="btn btn-outline btn-pill py-2 px-4 me-2">Cancel</a>
+            <button type="submit" class="btn btn-primary btn-pill py-2 px-5">Save Modifications</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

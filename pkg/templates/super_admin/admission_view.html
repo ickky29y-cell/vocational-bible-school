@@ -1,0 +1,27 @@
+{% extends 'super_admin/base.html' %}
+
+{% block title %}Admission #{{ application.id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2>Application #{{ application.id }}</h2>
+    <dl class="row">
+        <dt class="col-sm-3">Name</dt><dd class="col-sm-9">{{ application.first_name }} {{ application.last_name }}</dd>
+        <dt class="col-sm-3">Email</dt><dd class="col-sm-9">{{ application.email }}</dd>
+        <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">{{ application.phone }}</dd>
+        <dt class="col-sm-3">DOB</dt><dd class="col-sm-9">{{ application.dob }}</dd>
+        <dt class="col-sm-3">Status</dt><dd class="col-sm-9">{{ application.status }}</dd>
+        <dt class="col-sm-3">Notes</dt><dd class="col-sm-9">{{ application.notes }}</dd>
+    </dl>
+
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Notes (optional)</label>
+            <textarea name="note" class="form-control"></textarea>
+        </div>
+        <button name="action" value="accept" class="btn btn-success">Accept</button>
+        <button name="action" value="reject" class="btn btn-danger">Reject</button>
+        <a href="{{ url_for('super_admin_admissions') }}" class="btn btn-secondary">Back</a>
+    </form>
+</div>
+{% endblock %}

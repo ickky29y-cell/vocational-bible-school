@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}System Error - VBS Champions{% endblock %}
+
+{% block content %}
+<div class="container text-center my-5 py-5">
+    <div class="vbs-card p-5" style="max-width: 600px; margin: 0 auto; border-top: 5px solid var(--danger);">
+        <div style="font-size: 80px; color: var(--danger); margin-bottom: 20px;">
+            <i class="fas fa-tools"></i>
+        </div>
+        <h1 class="mb-3">Something Went Wrong</h1>
+        <p class="lead text-muted mb-4">Our server encountered an unexpected roadblock. The Chaplain and tech team have been notified!</p>
+        <a href="/" class="btn btn-primary"><i class="fas fa-home"></i> Go Back Home</a>
+    </div>
+</div>
+{% endblock %}

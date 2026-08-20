@@ -1,0 +1,113 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Question Banks - VBS Champions{% endblock %}
+
+{% block nav_banks %}active{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Question Banks</h1>
+        <p class="text-muted mb-0">Organize VBS quizzes, Bible trivia, and memory recitation repositories by class.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Question Bank Creation Card -->
+    <div class="col-lg-4 mb-4">
+        <div class="vbs-card p-4" style="border-top: 5px solid var(--primary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-plus"></i> Create Bank</h4>
+            <hr class="mb-4">
+            
+            <form action="/teacher/question-banks/" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+                <div class="form-group">
+                    <label class="form-label" for="name">Bank Name <span class="text-danger">*</span></label>
+                    <input type="text" name="name" id="name" class="form-control" required placeholder="e.g. Juniors Bible Trivia">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">Brief Description</label>
+                    <input type="text" name="description" id="description" class="form-control" placeholder="Bible knowledge quiz">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="skill_id">Optional Skill Bank</label>
+                    <select name="skill_id" id="skill_id" class="form-control">
+                        <option value="">Normal question bank</option>
+                        {% for skill in skills or [] %}
+                            <option value="{{ skill.id }}">{{ skill.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Tag this bank to a skill so it is used only for students who selected that skill.</small>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="class_ids">Target Classes <span class="text-danger">*</span></label>
+                    <select name="class_ids" id="class_ids" class="form-control" multiple required size="{{ classes|length if classes else 3 }}">
+                        {% for cls in classes %}
+                            <option value="{{ cls.id }}">{{ cls.name }} {% if cls.min_age or cls.max_age %}(Ages {{ cls.min_age or '?' }}–{{ cls.max_age or '?' }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple classes. The first selected class becomes the primary class.</small>
+                    {% if not classes %}
+                        <div class="text-muted small mt-2">No classes are assigned to you yet.</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-lg py-3"><i class="fas fa-save"></i> Save Question Bank</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Active Question Banks list -->
+    <div class="col-lg-8 mb-4">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3"><i class="fas fa-list text-primary"></i> Active Question Banks</h4>
+            <hr class="mb-4">
+            
+            <div class="table-responsive">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Bank Name</th>
+                            <th>Class Assigner</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bank in banks %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ bank.name }}{% if bank.skill %} <span class="badge bg-warning text-dark">{{ bank.skill.name }}</span>{% endif %}</td>
+                                <td>
+                                    {% set bank_classes = [bank.class_] + (bank.assigned_classes or []) %}
+                                    {% for cls in bank_classes|unique %}
+                                        <span class="badge badge-info mr-1">{{ cls.name }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td class="small text-muted">{{ bank.description or 'No details' }}</td>
+                                <td>
+                                    <div class="actions-cell">
+                                        <a href="/teacher/question-banks/{{ bank.id }}/" class="btn btn-primary btn-pill py-1 px-3" style="font-size: 13px;">
+                                            <i class="fas fa-folder-open"></i> View Questions
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-5">
+                                    <i class="fas fa-database d-block mb-3" style="font-size: 40px; color: #cbd5e1;"></i>
+                                    No Question Banks created yet!
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

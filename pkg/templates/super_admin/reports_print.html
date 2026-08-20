@@ -1,0 +1,44 @@
+{% extends 'super_admin/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block super_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>{{ title }}</h2>
+    <button onclick="window.print()" class="btn btn-outline-primary">Print / Save PDF</button>
+</div>
+
+<table class="vbs-table table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Student</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Class</th>
+            <th>CBT Best Score</th>
+            <th>Manual Avg</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in students %}
+            {% set best = s.attempts|selectattr('is_submitted')|map(attribute='score')|list|default([]) %}
+            {% set best_score = (best|max) if best else 'N/A' %}
+            {% set manual_avg = (s.skill_assessments|map(attribute='score')|list) %}
+            {% set manual_avg_val = (manual_avg|sum / (manual_avg|length)) if manual_avg|length > 0 else 'N/A' %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ s.first_name }} {{ s.last_name }}</td>
+                <td>{{ s.age }}</td>
+                <td>{{ s.gender }}</td>
+                <td>{{ s.class_.name if s.class_ else 'Unassigned' }}</td>
+                <td>{{ best_score }}</td>
+                <td>{{ manual_avg_val }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="7" class="text-center">No students found for this selection.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

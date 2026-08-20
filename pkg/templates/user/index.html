@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}VBS Champions - Church Vacation Bible School{% endblock %}
+
+{% block content %}
+<div class="container my-5 text-center">
+    <div class="vbs-card p-5" style="border-top: 6px solid var(--primary); background: linear-gradient(to bottom, #ffffff, #fafaff);">
+        <div style="font-size: 70px; color: var(--secondary); margin-bottom: 20px; animation: bounce 2s infinite;">
+            <i class="fas fa-star"></i>
+        </div>
+        
+        {% if active_year %}
+            <span class="badge badge-warning mb-3" style="font-size: 16px; padding: 8px 18px;">VBS {{ active_year.year }} is Active!</span>
+            <h1 class="display-4 fw-bold mb-3" style="color: var(--primary);">{{ active_year.theme }}</h1>
+            <p class="lead text-muted mb-4" style="max-width: 600px; margin: 0 auto;">Welcome, Champions! Prepare for an exciting adventure of faith, memory verses, and biblical learning. Log in to start your journey!</p>
+        {% else %}
+            <h1 class="display-4 fw-bold mb-3" style="color: var(--primary);">Church VBS System</h1>
+            <p class="lead text-muted mb-4" style="max-width: 600px; margin: 0 auto;">Welcome to the VBS examination and student management platform. The VBS year is not currently initialized by the Chaplain. Please check back later!</p>
+        {% endif %}
+
+        <div class="mt-4">
+            {% if current_user.is_authenticated %}
+                <a href="/" class="btn btn-primary btn-pill btn-lg px-5 py-3"><i class="fas fa-tachometer-alt"></i> Go to Dashboard</a>
+            {% else %}
+                <a href="/user/login/" class="btn btn-primary btn-pill btn-lg px-5 py-3"><i class="fas fa-sign-in-alt"></i> Log In to Start</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+</style>
+{% endblock %}

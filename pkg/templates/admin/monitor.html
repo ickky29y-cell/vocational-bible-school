@@ -1,0 +1,110 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Live Exam Monitor - VBS Champions{% endblock %}
+
+{% block nav_monitor %}active{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Live Exam Monitor</h1>
+        <p class="text-muted mb-0">Supervise active CBT sessions by class in real time. Automatically refreshes every 30 seconds.</p>
+    </div>
+    <button type="button" class="btn btn-outline btn-pill py-2 px-3" onclick="location.reload();">
+        <i class="fas fa-sync-alt"></i> Refresh Now
+    </button>
+</div>
+
+<div class="row">
+    {% if class_groups %}
+        {% for cls in class_groups %}
+            <div class="col-12 mb-4">
+                <div class="vbs-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="fw-bold mb-0 text-primary"><i class="fas fa-chalkboard-teacher"></i> {{ cls.name }}</h4>
+                        <span class="badge badge-primary">{{ class_groups[cls.id]|length }} active</span>
+                    </div>
+
+                    {% if class_groups[cls.id] %}
+                        <div class="row">
+                            {% for att in class_groups[cls.id] %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="vbs-card monitoring-card active p-3" style="position: relative; border-left-width: 6px !important;">
+                                        <div class="row align-items-center">
+                                            <div class="col-auto">
+                                                {% if att.selfie_path %}
+                                                    <img src="{{ url_for('serve_selfie', filename=att.selfie_path) }}" class="rounded border border-2 border-primary" style="width: 80px; height: 60px; object-fit: cover;" alt="Selfie">
+                                                {% else %}
+                                                    <div class="bg-dark text-white rounded text-center d-flex align-items-center justify-content-center" style="width: 80px; height: 60px; font-size: 20px;">
+                                                        <i class="fas fa-user-slash"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col">
+                                                <h6 class="fw-bold mb-1 text-primary">{{ att.student.first_name }} {{ att.student.last_name }}</h6>
+                                                <div class="small fw-bold text-dark text-truncate" style="max-width: 160px;" title="{{ att.exam.title }}">
+                                                    <i class="fas fa-file-alt text-muted"></i> {{ att.exam.title }}
+                                                </div>
+                                                <div class="small text-muted" style="font-size: 11px;">
+                                                    <i class="far fa-clock"></i> Started: {{ att.start_time.strftime('%I:%M %p') }}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-success-light text-success fw-bold" style="font-size: 11px;"><i class="fas fa-spinner fa-spin"></i> Active Session</span>
+                                            <span class="small text-muted elapsed-timer" data-start-time="{{ att.start_time.isoformat() }}">Elapsed: Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-muted text-center py-4">No active sessions in this class right now.</div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12 text-center py-5">
+            <div class="vbs-card p-5 bg-white text-muted">
+                <i class="fas fa-desktop d-block mb-3" style="font-size: 50px; color: #cbd5e1;"></i>
+                <h5 class="fw-bold">No active CBT sessions in progress</h5>
+                <p class="mb-0 small">When students start their examinations, their profile, live timer, and selfies will appear here grouped by class.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    setInterval(function() {
+        location.reload();
+    }, 30000);
+
+    function updateElapsedTimes() {
+        $('.elapsed-timer').each(function() {
+            let startTimeStr = $(this).data('start-time');
+            if (startTimeStr) {
+                let startTime = new Date(startTimeStr);
+                let now = new Date();
+                let diffMs = now - startTime;
+                let diffMins = Math.floor(diffMs / 60000);
+                let diffSecs = Math.floor((diffMs % 60000) / 1000);
+
+                if (diffMins < 0) diffMins = 0;
+                if (diffSecs < 0) diffSecs = 0;
+
+                let displaySecs = diffSecs < 10 ? '0' + diffSecs : diffSecs;
+                $(this).text(`Elapsed: ${diffMins}:${displaySecs} Mins`);
+            }
+        });
+    }
+
+    updateElapsedTimes();
+    setInterval(updateElapsedTimes, 1000);
+});
+</script>
+{% endblock %}

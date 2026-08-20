@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Results - {{ exam.title }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/child-cbt.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="cbt-card p-4 p-md-5">
+        <div class="text-center mb-5">
+            <div style="font-size: 60px; color: var(--success);" class="mb-3">
+                <i class="fas fa-check-double"></i>
+            </div>
+            <h2 class="fw-bold text-primary">Exam Result Review</h2>
+            <h4 class="text-muted mb-0">{{ exam.title }}</h4>
+        </div>
+
+        <div class="row align-items-center mb-5 p-4 bg-light rounded-3 border">
+            <!-- Score Card -->
+            <div class="col-md-4 text-center border-end py-3">
+                <h6 class="text-uppercase text-muted fw-bold small">Your Total Score</h6>
+                <div class="display-3 fw-bold text-success my-2">{{ attempt.score }}</div>
+                <div class="text-muted fw-bold">Marks Obtained</div>
+            </div>
+
+            <!-- Quiz statistics details -->
+            <div class="col-md-4 py-3 px-md-4">
+                <h6 class="text-uppercase text-muted fw-bold small mb-3">Quiz Statistics:</h6>
+                <div class="mb-2 d-flex justify-content-between">
+                    <span class="text-muted">Start Time:</span>
+                    <span class="fw-bold">{{ attempt.start_time.strftime('%I:%M %p') }}</span>
+                </div>
+                <div class="mb-2 d-flex justify-content-between">
+                    <span class="text-muted">End Time:</span>
+                    <span class="fw-bold">{{ attempt.end_time.strftime('%I:%M %p') if attempt.end_time else 'Auto-submitted' }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Status:</span>
+                    <span class="badge bg-success">Graded</span>
+                </div>
+            </div>
+
+            <!-- Captured Verification Selfie image -->
+            <div class="col-md-4 text-center py-3">
+                <h6 class="text-uppercase text-muted fw-bold small mb-2">Selfie Record</h6>
+                {% if attempt.selfie_path %}
+                    <img src="{{ url_for('serve_selfie', filename=attempt.selfie_path) }}" 
+                         class="rounded border border-3 border-secondary" style="width: 140px; height: 105px; object-fit: cover;" alt="Selfie Verification">
+                {% else %}
+                    <div class="text-muted italic small">No selfie uploaded</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="my-5">
+
+        <!-- Corrections breakdown list -->
+        <h3 class="fw-bold mb-4" style="color: var(--dark); font-family: var(--font-heading);"><i class="fas fa-list-ol"></i> Corrections & Solutions</h3>
+        
+        <div class="questions-corrections-list">
+            {% for item in feedback %}
+                <div class="p-4 mb-4 border rounded-3 {% if item.is_correct %}bg-light-success{% else %}bg-light-danger{% endif %}" 
+                     style="border-left: 6px solid {% if item.is_correct %}var(--success){% else %}var(--danger){% endif %} !important;">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fw-bold text-muted small">Question {{ loop.index }}</span>
+                        {% if item.is_correct %}
+                            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Correct (+{{ item.marks_obtained }} Marks)</span>
+                        {% else %}
+                            <span class="badge badge-danger"><i class="fas fa-times-circle"></i> Incorrect (0 Marks)</span>
+                        {% endif %}
+                    </div>
+
+                    {% if item.image %}
+                        <img src="{{ url_for('serve_question_image', filename=item.image) }}" class="question-image mb-3" style="max-height: 150px;" alt="Question Image">
+                    {% endif %}
+
+                    <h5 class="fw-bold mb-3">{{ item.text }}</h5>
+
+                    {% if item.bible_ref %}
+                        <div class="question-reference py-2 px-3 mb-3" style="background-color: rgba(255, 255, 255, 0.6); font-size: 14px;">
+                            <i class="fas fa-bible text-warning"></i> Reference: <strong>{{ item.bible_ref }}</strong>
+                        </div>
+                    {% endif %}
+
+                    <!-- Options list with marking details -->
+                    <div class="row g-2 mb-3">
+                        {% for opt in item.options %}
+                            <div class="col-sm-6">
+                                <div class="p-3 rounded border bg-white d-flex align-items-center justify-content-between" 
+                                     style="font-size: 15px; 
+                                            {% if opt.letter == item.correct_option %}
+                                                border: 2px solid var(--success) !important; background-color: var(--success-light) !important;
+                                            {% elif opt.letter == item.selected and not item.is_correct %}
+                                                border: 2px solid var(--danger) !important; background-color: #fef2f2 !important;
+                                            {% endif %}">
+                                    <div>
+                                        <span class="badge bg-secondary me-2">{{ opt.letter }}</span> {{ opt.text }}
+                                    </div>
+                                    
+                                    {% if opt.letter == item.correct_option %}
+                                        <i class="fas fa-check text-success"></i>
+                                    {% elif opt.letter == item.selected and not item.is_correct %}
+                                        <i class="fas fa-times text-danger"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Explanations block -->
+                    {% if item.explanation %}
+                        <div class="p-3 bg-white border rounded" style="font-size: 14px;">
+                            <span class="fw-bold text-primary"><i class="fas fa-info-circle"></i> Teacher's Explanation:</span>
+                            <p class="mb-0 mt-1 italic text-muted">{{ item.explanation }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="/student/dashboard/" class="btn btn-primary btn-pill px-5 py-3"><i class="fas fa-chevron-left"></i> Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-light-success {
+    background-color: #f6fdfc;
+}
+.bg-light-danger {
+    background-color: #fffbfb;
+}
+</style>
+{% endblock %}

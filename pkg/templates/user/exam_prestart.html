@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}VBS Quiz Instructions - {{ exam.title }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/child-cbt.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="cbt-card">
+                <div class="text-center mb-4">
+                    {% if test_mode %}<div class="alert alert-warning"><i class="fas fa-vial"></i> Test Mode: This attempt will not be recorded.</div>{% endif %}
+                    <h2 class="fw-bold text-primary"><i class="fas fa-flag"></i> Pre-Exam Instructions</h2>
+                    <h4 class="text-muted">{{ exam.title }}</h4>
+                </div>
+
+                <div class="row">
+                    <!-- Instructions Section -->
+                    <div class="col-md-{{ '12' if test_mode else '6' }} mb-4">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-book-reader text-warning"></i> Guidelines:</h5>
+                        <ul class="text-muted mb-4" style="list-style-type: disc; padding-left: 20px; font-size: 16px;">
+                            <li class="mb-2">This is a timed exam with a duration of <strong>{{ exam.duration_minutes }} minutes</strong>.</li>
+                            <li class="mb-2">Make sure you have a quiet place with a stable internet connection.</li>
+                            <li class="mb-2">Do not close or refresh this tab once the quiz starts.</li>
+                            {% if test_mode %}
+                            <li class="mb-2">Answers, scores, and reports are not saved in Test Mode.</li>
+                            <li class="mb-2">Selfie verification is skipped for this teacher preview.</li>
+                            {% else %}
+                            <li class="mb-2">Your progress will be saved automatically as you select options.</li>
+                            <li class="mb-2">You must capture a verification selfie before clicking "Start Exam".</li>
+                            {% endif %}
+                        </ul>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="rules-agree">
+                            <label class="form-check-label fw-bold" for="rules-agree" style="font-size: 15px; cursor: pointer;">
+                                I agree to follow the VBS Honor Code: I will not check my Bible or notes during this exam.
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Selfie Snapshot Capture Section -->
+                    <div class="col-md-6 text-center"{% if test_mode %} style="display:none;"{% endif %}>
+                        <h5 class="fw-bold mb-3"><i class="fas fa-camera text-primary"></i> Face Verification</h5>
+                        <p class="small text-muted mb-2">Snap a selfie to unlock your exam paper!</p>
+                        
+                        <div class="camera-preview-container mx-auto">
+                            <!-- Live video stream -->
+                            <video id="camera-video" autoplay playsinline></video>
+                            <!-- Captured preview canvas -->
+                            <canvas id="canvas-photo" width="320" height="240" style="display: none;"></canvas>
+                            <!-- Skipped placeholder box -->
+                            <div id="skipped-placeholder" class="text-white d-flex align-items-center justify-content-center h-100 flex-column bg-secondary" style="display: none !important;">
+                                <i class="fas fa-user-slash fa-3x mb-2"></i>
+                                <span>Selfie Verification Skipped</span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-center mt-3">
+                            <button type="button" id="snap-btn" class="btn btn-outline btn-pill py-2 px-3"><i class="fas fa-camera"></i> Snap Photo</button>
+                            <button type="button" id="skip-btn" class="btn btn-outline btn-pill py-2 px-3"><i class="fas fa-forward"></i> Skip Selfie</button>
+                            <button type="button" id="retake-btn" class="btn btn-danger btn-pill py-2 px-3" style="display:none;"><i class="fas fa-sync-alt"></i> Retake</button>
+                        </div>
+                    </div>
+                </div>
+
+                <form action="{% if test_mode %}/teacher/exams/preview/{{ exam.id }}/start/{% else %}/student/exam/prestart/{{ exam.id }}/{% endif %}" method="POST" id="prestart-form" class="text-center mt-4">
+                    <!-- Hidden field to send base64 selfie data -->
+                    <input type="hidden" name="selfie_image" id="selfie-image-input"{% if test_mode %} value="skipped"{% endif %}>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                    
+                    <a href="{% if test_mode %}/teacher/exams/{% else %}/student/dashboard/{% endif %}" class="btn btn-outline btn-pill py-3 px-4 me-2"><i class="fas fa-chevron-left"></i> Cancel</a>
+                    <button type="submit" id="start-exam-btn" class="btn btn-primary btn-pill py-3 px-5 btn-lg" disabled>
+                        <i class="fas fa-rocket"></i> Start Exam
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    let video = document.getElementById('camera-video');
+    let canvas = document.getElementById('canvas-photo');
+    let snapBtn = document.getElementById('snap-btn');
+    let skipBtn = document.getElementById('skip-btn');
+    let retakeBtn = document.getElementById('retake-btn');
+    let skippedPlaceholder = document.getElementById('skipped-placeholder');
+    let startBtn = document.getElementById('start-exam-btn');
+    let selfieInput = document.getElementById('selfie-image-input');
+    let rulesAgree = document.getElementById('rules-agree');
+    let streamRef = null;
+    let photoCaptured = {{ 'true' if test_mode else 'false' }};
+
+    // Start video camera
+    if (!{{ 'true' if test_mode else 'false' }} && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                video.srcObject = stream;
+                streamRef = stream;
+            })
+            .catch(function(err) {
+                console.error("Camera access failed:", err);
+                // Allow them to know they can just click Skip Selfie
+            });
+    }
+
+    // Capture snapshot
+    snapBtn.addEventListener('click', function() {
+        if (!streamRef) {
+            alert("No working camera detected. Please grant permission or click Skip Selfie.");
+            return;
+        }
+        let ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, 320, 240);
+        
+        // Save base64 string
+        let dataUrl = canvas.toDataURL('image/jpeg');
+        selfieInput.value = dataUrl;
+
+        // Toggle UI
+        video.style.display = 'none';
+        canvas.style.display = 'block';
+        skippedPlaceholder.style.setProperty('display', 'none', 'important');
+        snapBtn.style.display = 'none';
+        skipBtn.style.display = 'none';
+        retakeBtn.style.display = 'inline-flex';
+        photoCaptured = true;
+        
+        checkFormValidity();
+    });
+
+    // Skip selfie snapshot
+    skipBtn.addEventListener('click', function() {
+        selfieInput.value = "skipped";
+
+        // Toggle UI
+        video.style.display = 'none';
+        canvas.style.display = 'none';
+        skippedPlaceholder.style.setProperty('display', 'flex', 'important');
+        snapBtn.style.display = 'none';
+        skipBtn.style.display = 'none';
+        retakeBtn.style.display = 'inline-flex';
+        photoCaptured = true;
+        
+        checkFormValidity();
+    });
+
+    // Retake snapshot
+    retakeBtn.addEventListener('click', function() {
+        video.style.display = 'block';
+        canvas.style.display = 'none';
+        skippedPlaceholder.style.setProperty('display', 'none', 'important');
+        snapBtn.style.display = 'inline-flex';
+        skipBtn.style.display = 'inline-flex';
+        retakeBtn.style.display = 'none';
+        selfieInput.value = "";
+        photoCaptured = false;
+        
+        checkFormValidity();
+    });
+
+    // Honor agreement toggle
+    rulesAgree.addEventListener('change', function() {
+        checkFormValidity();
+    });
+
+    function checkFormValidity() {
+        if (photoCaptured && rulesAgree.checked) {
+            startBtn.disabled = false;
+        } else {
+            startBtn.disabled = true;
+        }
+    }
+
+    // Stop camera when leaving page
+    window.addEventListener('beforeunload', function() {
+        if (streamRef) {
+            streamRef.getTracks().forEach(track => track.stop());
+        }
+    });
+});
+</script>
+{% endblock %}

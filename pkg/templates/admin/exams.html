@@ -1,0 +1,155 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Exam Builder - VBS Champions{% endblock %}
+
+{% block nav_exams %}active{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Exam Builder</h1>
+        <p class="text-muted mb-0">Create exam header papers and set section question selection rules.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Exam creation form -->
+    <div class="col-lg-4 mb-4">
+        <div class="vbs-card p-4" style="border-top: 5px solid var(--primary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-plus"></i> Create Exam Paper</h4>
+            <hr class="mb-4">
+            
+            <form action="/teacher/exams/" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+                <div class="form-group">
+                    <label class="form-label" for="title">Exam Title <span class="text-danger">*</span></label>
+                    <input type="text" name="title" id="title" class="form-control" required placeholder="e.g. Juniors General Quiz">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="class_ids">Target Class(es) <span class="text-danger">*</span></label>
+                    <select name="class_ids" id="class_ids" class="form-control" multiple required size="{{ classes|length if classes else 3 }}">
+                        {% for cls in classes %}
+                            <option value="{{ cls.id }}">{{ cls.name }} {% if cls.min_age or cls.max_age %}(Ages {{ cls.min_age or '?' }}–{{ cls.max_age or '?' }}){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Hold Ctrl/Cmd to select multiple classes. First selected becomes primary for the exam.</small>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="duration_minutes">Duration (Minutes)</label>
+                    <input type="number" name="duration_minutes" id="duration_minutes" class="form-control" min="5" max="180" value="30" required>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="skill_question_count">Optional Skill Questions</label>
+                    <input type="number" name="skill_question_count" id="skill_question_count" class="form-control" min="0" value="0">
+                    <small class="text-muted">Students without a skill receive this many extra normal questions so every paper has the same length.</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-lg py-3"><i class="fas fa-save"></i> Save Exam Header</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Active exam papers list -->
+    <div class="col-lg-8 mb-4">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3"><i class="fas fa-scroll text-primary"></i> Active Exam Papers</h4>
+            <hr class="mb-4">
+            
+            <div class="table-responsive">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Exam Title</th>
+                            <th>Class</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ex in exams %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ ex.title }}</td>
+                                <td>
+                                    {% set assigned = ex.assigned_classes if ex.assigned_classes else exam_classes_map.get(ex.id, []) %}
+                                        {% for ac in assigned %}
+                                            <span class="badge badge-info">{{ ac.name }}</span>
+                                        {% else %}
+                                            <span class="badge badge-info">{{ ex.class_.name }}</span>
+                                        {% endfor %}
+                                </td>
+                                <td>{{ ex.duration_minutes }} Mins</td>
+                                <td>
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input toggle-status-btn" type="checkbox" id="switch-{{ ex.id }}" data-ex-id="{{ ex.id }}" {% if not ex.is_draft %}checked{% endif %}>
+                                        <label class="form-check-label small text-muted" for="switch-{{ ex.id }}" id="status-label-{{ ex.id }}">
+                                            {% if ex.is_draft %}Draft{% else %}Active{% endif %}
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="actions-cell">
+                                        <a href="/teacher/exams/edit/{{ ex.id }}/" class="btn btn-secondary btn-pill py-1 px-3" style="font-size: 13px;">
+                                            <i class="fas fa-edit"></i> Edit Rules
+                                        </a>
+                                        <a href="/teacher/exams/preview/{{ ex.id }}/" class="btn btn-outline-primary btn-pill py-1 px-3" style="font-size: 13px;">
+                                            <i class="fas fa-vial"></i> Test Exam
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-5">
+                                    <i class="fas fa-file-signature d-block mb-3" style="font-size: 40px; color: #cbd5e1;"></i>
+                                    No Exam papers created yet!
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.toggle-status-btn').change(function() {
+        let exId = $(this).data('ex-id');
+        let label = $(`#status-label-${exId}`);
+        
+        fetch(`/teacher/exams/toggle-draft/${exId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (data.is_draft) {
+                    label.text("Draft");
+                } else {
+                    label.text("Active");
+                }
+            } else {
+                alert("Error toggling exam status. Check that exam is valid.");
+                $(this).prop('checked', !$(this).is(':checked')); // revert switch
+            }
+        })
+        .catch(err => {
+            console.error("Connection error:", err);
+            $(this).prop('checked', !$(this).is(':checked'));
+        });
+    });
+});
+</script>
+{% endblock %}

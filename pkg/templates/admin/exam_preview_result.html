@@ -1,0 +1,12 @@
+{% extends "admin/base.html" %}
+{% block title %}Test Result - VBS Champions{% endblock %}
+{% block admin_content %}
+<div class="dashboard-header"><div><h1 class="dashboard-title">Test Result</h1><p class="text-muted mb-0">This is a sample result and was not saved.</p></div></div>
+<div class="vbs-card p-5 text-center" style="max-width:640px;">
+    <div class="alert alert-warning"><i class="fas fa-vial"></i> Test Mode Only</div>
+    <h2 class="fw-bold text-primary">{{ correct }} / {{ total }}</h2>
+    <p class="text-muted">Sample score: {{ ((correct / total) * 100)|round(2) if total else 0 }}%</p>
+    <a href="{{ url_for('teacher_exam_preview', exam_id=exam.id) }}" class="btn btn-secondary me-2">Test Again</a>
+    <a href="{{ url_for('teacher_exams') }}" class="btn btn-primary">Back to Exams</a>
+</div>
+{% endblock %}

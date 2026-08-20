@@ -1,0 +1,29 @@
+{% extends 'super_admin/base.html' %}
+
+{% block title %}Admissions Applications{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2>Admissions</h2>
+    <a href="{{ url_for('super_admin_admissions_download') }}" class="btn btn-outline-secondary mb-3">Download CSV</a>
+    <table class="table table-striped">
+        <thead>
+            <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+        {% for a in applications %}
+            <tr>
+                <td>{{ a.id }}</td>
+                <td>{{ a.first_name }} {{ a.last_name }}</td>
+                <td>{{ a.email }}</td>
+                <td>{{ a.phone }}</td>
+                <td>{{ a.status }}</td>
+                <td><a href="{{ url_for('super_admin_admission_view', app_id=a.id) }}" class="btn btn-sm btn-primary">View</a></td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6">No applications yet.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

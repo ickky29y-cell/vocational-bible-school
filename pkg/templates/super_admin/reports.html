@@ -1,0 +1,187 @@
+{% extends "super_admin/base.html" %}
+
+{% block title %}VBS Score Reports - VBS Champions{% endblock %}
+
+{% block nav_reports %}active{% endblock %}
+
+{% block super_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Score Reports & Rankings</h1>
+        <p class="text-muted mb-0">Inspect evaluation grades, rankings, and download consolidated spreadsheets.</p>
+    </div>
+    <a href="/super-admin/reports/download/" class="btn btn-primary btn-pill py-3 px-4">
+        <i class="fas fa-file-excel"></i> Export Scorecard CSV
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="vbs-card p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Class Summaries</h5>
+                <div>
+                    <a href="/super-admin/reports/download/" class="btn btn-sm btn-outline-primary me-2">Export All CSV</a>
+                    <a href="/super-admin/reports/print/" target="_blank" class="btn btn-sm btn-outline-secondary">Print View</a>
+                </div>
+            </div>
+
+            <div class="table-responsive mt-3">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Students</th>
+                            <th>CBT Avg</th>
+                            <th>Manual Avg</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cls in class_summaries %}
+                            <tr>
+                                <td>{{ cls.name }}</td>
+                                <td>{{ cls.student_count }}</td>
+                                <td>{{ cls.cbt_avg if cls.cbt_avg is not none else 'N/A' }}</td>
+                                <td>{{ cls.manual_avg if cls.manual_avg is not none else 'N/A' }}</td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary" href="/super-admin/reports/download/?class_id={{ cls.id }}">CSV</a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="/super-admin/reports/print/?class_id={{ cls.id }}" target="_blank">Print</a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" class="text-center">No classes found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="vbs-card p-3">
+            <h5 class="mb-0">Under-6 Dedicated Section</h5>
+            <p class="small text-muted">Under-6 pupils are presented here but remain included in their class totals above.</p>
+            <div class="table-responsive mt-3">
+                <table class="vbs-table">
+                    <thead>
+                        <tr><th>#</th><th>Student</th><th>Age</th><th>Class</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for s in under6_students %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ s.first_name }} {{ s.last_name }}</td>
+                                <td>{{ s.age }}</td>
+                                <td>{{ s.class_.name if s.class_ else 'Unassigned' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="text-center">No under-6 students found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="mt-2">
+                    <a href="/super-admin/reports/download/?under6=1" class="btn btn-sm btn-outline-primary">Export Under-6 CSV</a>
+                    <a href="/super-admin/reports/print/?under6=1" class="btn btn-sm btn-outline-secondary" target="_blank">Print Under-6</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- CBT Quiz Rankings (Ages 6 to 15) -->
+    <div class="col-lg-6 mb-4">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-trophy text-warning"></i> CBT Quiz Leaderboard</h4>
+            <p class="text-muted small">Leaderboard sorted by highest scores in Computer Based Tests.</p>
+            <hr class="mb-4">
+
+            <div class="table-responsive">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Student</th>
+                            <th>Class Room</th>
+                            <th>Marks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in cbt_rankings %}
+                            <tr>
+                                <td class="fw-bold text-center">
+                                    {% if loop.index == 1 %}
+                                        <i class="fas fa-medal text-warning" style="font-size: 20px;"></i>
+                                    {% elif loop.index == 2 %}
+                                        <i class="fas fa-medal text-secondary" style="font-size: 18px;"></i>
+                                    {% elif loop.index == 3 %}
+                                        <i class="fas fa-medal" style="color: #cd7f32; font-size: 16px;"></i>
+                                    {% else %}
+                                        {{ loop.index }}
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">{{ att.student.first_name }} {{ att.student.last_name }}</td>
+                                <td><span class="badge badge-info">{{ att.student.class_.name if att.student.class_ else 'Unassigned' }}</span></td>
+                                <td><span class="badge badge-success">{{ att.score }} Marks</span></td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-5">No CBT attempts submitted for this VBS year yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Beginners Skill Averages (Under 6) -->
+    <div class="col-lg-6 mb-4">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3 text-secondary"><i class="fas fa-star text-warning"></i> Beginners Grades Averages</h4>
+            <p class="text-muted small">Pupils sorted by average scores in manual VBS project evaluations.</p>
+            <hr class="mb-4">
+
+            <div class="table-responsive">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Student</th>
+                            <th>Class Room</th>
+                            <th>Avg Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in manual_rankings %}
+                            <tr>
+                                <td class="fw-bold text-center">
+                                    {% if loop.index == 1 %}
+                                        <i class="fas fa-medal text-warning" style="font-size: 20px;"></i>
+                                    {% elif loop.index == 2 %}
+                                        <i class="fas fa-medal text-secondary" style="font-size: 18px;"></i>
+                                    {% elif loop.index == 3 %}
+                                        <i class="fas fa-medal" style="color: #cd7f32; font-size: 16px;"></i>
+                                    {% else %}
+                                        {{ loop.index }}
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">{{ item[0].first_name }} {{ item[0].last_name }}</td>
+                                <td><span class="badge badge-info">{{ item[0].class_.name if item[0].class_ else 'Unassigned' }}</span></td>
+                                <td><span class="badge badge-success">{{ item.avg_score|round(2) }} / 100</span></td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-5">No manual scores entered for this VBS year yet.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

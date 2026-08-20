@@ -1,0 +1,269 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit Exam Settings - VBS Champions{% endblock %}
+
+{% block nav_exams %}active{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Exam Rules & Sections</h1>
+        <p class="text-muted mb-0">Define quiz structure for: <span class="fw-bold">{{ exam.title }}</span></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/teacher/exams/preview/{{ exam.id }}/" class="btn btn-primary btn-pill py-2 px-3"><i class="fas fa-vial"></i> Test Exam</a>
+        <a href="/teacher/exams/" class="btn btn-outline btn-pill py-2 px-3"><i class="fas fa-arrow-left"></i> Back to Builder</a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Edit Exam settings card & Add Section form -->
+    <div class="col-lg-5 mb-4">
+        <!-- Exam settings -->
+        <div class="vbs-card p-4 mb-4" style="border-top: 5px solid var(--primary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-cog"></i> Settings</h4>
+            <hr class="mb-3">
+            
+            <form action="/teacher/exams/edit/{{ exam.id }}/" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                <input type="hidden" name="action" value="update_header">
+
+                <div class="form-group">
+                    <label class="form-label" for="title">Exam Title</label>
+                    <input type="text" name="title" id="title" class="form-control" value="{{ exam.title }}" required>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="duration_minutes">Duration (Minutes)</label>
+                    <input type="number" name="duration_minutes" id="duration_minutes" class="form-control" value="{{ exam.duration_minutes }}" required min="5" max="180">
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" for="skill_question_count">Optional Skill Questions</label>
+                    <input type="number" name="skill_question_count" id="skill_question_count" class="form-control" value="{{ exam.skill_question_count or 0 }}" min="0">
+                    <small class="text-muted">Reserved skill slot. Computer/Catering students get those questions; students with no skill get extra normal questions so the total stays the same.</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-sync-alt"></i> Save Settings</button>
+            </form>
+        </div>
+
+        <!-- Add Section rules form -->
+        <div class="vbs-card p-4" style="border-top: 5px solid var(--secondary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-layer-group"></i> Add Section Rule</h4>
+            <hr class="mb-3">
+            
+            <form action="/teacher/exams/edit/{{ exam.id }}/" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                <input type="hidden" name="action" value="add_section">
+
+                <div class="form-group">
+                    <label class="form-label" for="sec_title">Section Title <span class="text-danger">*</span></label>
+                    <input type="text" name="sec_title" id="sec_title" class="form-control" required placeholder="e.g. Section A: Trivia">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="sec_description">Description (Instruction)</label>
+                    <input type="text" name="sec_description" id="sec_description" class="form-control" placeholder="Answer all questions">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Source Question Bank(s) <span class="text-danger">*</span></label>
+
+                    <div class="row g-2 align-items-center">
+                        <div class="col-8">
+                            <select id="bank_select" class="form-control">
+                                <option value="" disabled selected>Choose bank...</option>
+                                {% for bank in question_banks %}
+                                    <option value="{{ bank.id }}">{{ bank.name }}{% if bank.skill %} ({{ bank.skill.name }}){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-3">
+                            <input type="number" id="bank_count" class="form-control" min="1" placeholder="Count" value="1">
+                        </div>
+                        <div class="col-1">
+                            <button type="button" id="add_bank_btn" class="btn btn-secondary" title="Add bank"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div id="bank_list" class="mt-3">
+                        <!-- added bank rows will appear here -->
+                    </div>
+
+                    <div class="small text-muted mt-2">Added banks will be combined and questions mixed randomly at draw-time. You can edit or remove rows until you save the section.</div>
+
+                    <input type="hidden" name="bank_ids_placeholder" value="">
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="question_count">Count to Pull <span class="text-danger">*</span></label>
+                        <input type="number" name="question_count" id="question_count" class="form-control" min="1" max="100" value="5" required>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="difficulty_filter">Difficulty filter</label>
+                        <select name="difficulty_filter" id="difficulty_filter" class="form-control">
+                            <option value="any">Any Difficulty</option>
+                            <option value="easy">Easy Only</option>
+                            <option value="medium">Medium Only</option>
+                            <option value="hard">Hard Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-secondary w-100"><i class="fas fa-plus"></i> Save Section Rule</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Defined exam sections list -->
+    <div class="col-lg-7 mb-4">
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3"><i class="fas fa-align-left text-primary"></i> Defined Exam Sections</h4>
+            <hr class="mb-4">
+            
+            <div class="table-responsive">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Section Title</th>
+                            <th>Bank Pool</th>
+                            <th>Rules</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sec in sections %}
+                            <tr id="sec-row-{{ sec.id }}">
+                                <td class="fw-bold">
+                                    {{ sec.title }}
+                                    <div class="small text-muted italic">{{ sec.description or 'No desc' }}</div>
+                                </td>
+                                <td><span class="badge badge-info">{{ sec.question_bank.name }}</span></td>
+                                <td>
+                                    <div class="fw-bold text-success">{{ sec.question_count }} Questions</div>
+                                    <div class="small text-muted capitalize">Diff: {{ sec.difficulty_filter }}</div>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn-icon btn-icon-danger delete-sec-btn" data-sec-id="{{ sec.id }}" title="Delete Section Rule">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-5">
+                                    No section rules defined for this quiz yet. Please add a rule to make the exam functional!
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.delete-sec-btn').click(function() {
+        let secId = $(this).data('sec-id');
+        if (confirm('Are you sure you want to delete this section rule from the exam paper?')) {
+            fetch(`/teacher/exams/section/delete/${secId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    $(`#sec-row-${secId}`).fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                } else {
+                    alert('Error removing section rule');
+                }
+            })
+            .catch(err => console.error("Error connecting to server:", err));
+        }
+    });
+});
+</script>
+<script>
+// Bank add/remove/edit UI for exam section
+$(function() {
+    function renderRow(id, name, count) {
+        return `\
+            <div class="d-flex align-items-center mb-2 bank-row" data-bank-id="${id}" data-bank-count="${count}">\
+                <div class="me-2 badge bg-info text-white">${name}</div>\
+                <div class="me-3 small text-muted">${count} Questions</div>\
+                <button type="button" class="btn btn-sm btn-outline-secondary me-2 edit-bank">Edit</button>\
+                <button type="button" class="btn btn-sm btn-outline-danger remove-bank">Remove</button>\
+                <input type="hidden" name="bank_ids" value="${id}">\
+                <input type="hidden" name="bank_counts" value="${count}">\
+            </div>`;
+    }
+
+    $('#add_bank_btn').click(function() {
+        let bankId = $('#bank_select').val();
+        let bankName = $('#bank_select option:selected').text();
+        let count = parseInt($('#bank_count').val() || '0', 10);
+        if (!bankId || isNaN(count) || count <= 0) {
+            alert('Please select a bank and enter a valid count (>=1).');
+            return;
+        }
+
+        // Prevent duplicate bank add
+        let exists = false;
+        $('#bank_list .bank-row').each(function() {
+            if ($(this).data('bank-id') == bankId) exists = true;
+        });
+        if (exists) {
+            if (!confirm('This bank is already added. Add again?')) return;
+        }
+
+        $('#bank_list').append(renderRow(bankId, bankName, count));
+        // reset inputs
+        $('#bank_select').val('');
+        $('#bank_count').val(1);
+        updateTotals();
+    });
+
+    // remove
+    $(document).on('click', '.remove-bank', function() {
+        $(this).closest('.bank-row').remove();
+        updateTotals();
+    });
+
+    // edit: populate inputs and remove row
+    $(document).on('click', '.edit-bank', function() {
+        let row = $(this).closest('.bank-row');
+        let id = row.data('bank-id');
+        let count = row.data('bank-count');
+        $('#bank_select').val(id);
+        $('#bank_count').val(count);
+        row.remove();
+        updateTotals();
+    });
+
+    function updateTotals() {
+        let total = 0;
+        $('#bank_list .bank-row').each(function() {
+            total += parseInt($(this).data('bank-count') || 0, 10);
+        });
+        if ($('#bank_total')) {
+            $('#bank_total').text(total);
+        } else {
+            $('#bank_list').append(`<div id="bank_total" class="small text-muted mt-2">Total questions: ${total}</div>`);
+        }
+    }
+
+    // Ensure that before form submit, hidden inputs exist (they are added per row). No further action required.
+});
+</script>
+{% endblock %}

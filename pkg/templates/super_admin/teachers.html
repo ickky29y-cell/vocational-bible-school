@@ -1,0 +1,211 @@
+{% extends "super_admin/base.html" %}
+
+{% block title %}Manage Instructors & Classes - VBS Champions{% endblock %}
+
+{% block nav_teachers %}active{% endblock %}
+
+{% block super_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Teachers & Classes</h1>
+        <p class="text-muted mb-0">Create VBS teacher accounts, define classrooms, and assign class instructors.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Creation Panels (Left Column) -->
+    <div class="col-lg-5 mb-4">
+        <!-- Create VBS Class Form -->
+        <div class="vbs-card p-4 mb-4" style="border-top: 5px solid var(--secondary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-school"></i> Create VBS Class</h4>
+            <hr class="mb-3">
+            <form action="/super-admin/class-assignment/" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                <input type="hidden" name="action" value="create_class">
+
+                <div class="form-group">
+                    <label class="form-label" for="class_name">Class Name <span class="text-danger">*</span></label>
+                    <input type="text" name="class_name" id="class_name" class="form-control" required placeholder="e.g. Juniors Blue Room">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="min_age">Minimum Age</label>
+                        <input type="number" name="min_age" id="min_age" class="form-control" min="0" placeholder="e.g. 9">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="max_age">Maximum Age</label>
+                        <input type="number" name="max_age" id="max_age" class="form-control" min="0" placeholder="e.g. 11">
+                    </div>
+                </div>
+
+                <div class="alert alert-light border mb-3 small text-muted mb-3">
+                    Classroom assessment mode is set by the teacher from the Grades page for each class.
+                </div>
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="primary_teacher_id">Primary Instructor (Optional)</label>
+                        <select name="primary_teacher_id" id="primary_teacher_id" class="form-control">
+                            <option value="">No primary</option>
+                            {% for t in teachers %}
+                                <option value="{{ t.id }}">{{ t.first_name }} {{ t.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="teacher_ids">Additional Instructors (Optional)</label>
+                        <select name="teacher_ids" id="teacher_ids" class="form-control" multiple>
+                            {% for t in teachers %}
+                                <option value="{{ t.id }}">{{ t.first_name }} {{ t.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Hold Ctrl/Cmd to select multiple instructors.</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-secondary w-100"><i class="fas fa-plus"></i> Initialize Class</button>
+            </form>
+        </div>
+
+        <!-- Create Teacher Account Form -->
+        <div class="vbs-card p-4" style="border-top: 5px solid var(--primary);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-user-plus"></i> Create Teacher Account</h4>
+            <hr class="mb-3">
+            <form action="/super-admin/teachers/" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+                <div class="form-group">
+                    <label class="form-label" for="phone">Phone Number</label>
+                    <input type="text" name="phone" id="phone" class="form-control" placeholder="e.g. +2348033221100">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="username">Username <span class="text-danger">*</span></label>
+                        <input type="text" name="username" id="username" class="form-control" required placeholder="john_teacher">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
+                        <input type="email" name="email" id="email" class="form-control" required placeholder="john.doe@church.com">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="password">Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password" id="password" class="form-control" required placeholder="Min 6 characters">
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="form-label" for="confirm_password">Confirm Password <span class="text-danger">*</span></label>
+                        <input type="password" name="confirm_password" id="confirm_password" class="form-control" required placeholder="Repeat password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-lg py-3"><i class="fas fa-user-plus"></i> Save Teacher Credentials</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Active Tables (Right Column) -->
+    <div class="col-lg-7 mb-4">
+        <!-- Instructor Assignments Trigger Form -->
+        <div class="vbs-card p-4 mb-4" style="border-top: 5px solid var(--accent);">
+            <h4 class="fw-bold mb-3 text-primary"><i class="fas fa-link"></i> Quick Class Assigner</h4>
+            <hr class="mb-3">
+            <form action="/super-admin/class-assignment/" method="POST" class="row align-items-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                <input type="hidden" name="action" value="assign_teacher">
+
+                <div class="col-md-5 form-group mb-md-0">
+                    <label class="form-label" for="class_id">Select VBS Class</label>
+                    <select name="class_id" id="class_id" class="form-control" required>
+                        <option value="" disabled selected>Choose class...</option>
+                        {% for cls in classes %}
+                            {%- set eff_min = cls.min_age if cls.min_age is not none else (cls.category.min_age if cls.category else None) -%}
+                            {%- set eff_max = cls.max_age if cls.max_age is not none else (cls.category.max_age if cls.category else None) -%}
+                            {%- set eff_method = cls.assessment_method if cls.assessment_method else (cls.category.assessment_method if cls.category else '') -%}
+                            <option value="{{ cls.id }}">{{ cls.name }}{% if cls.category %} • {{ cls.category.name }}{% endif %}{% if eff_min or eff_max %} • Ages {{ eff_min or '?' }}–{{ eff_max or '?' }}{% endif %}{% if eff_method %} • {{ eff_method|upper }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-5 form-group mb-md-0">
+                    <label class="form-label" for="teacher_id_assign">Select Teacher</label>
+                    <select name="teacher_id" id="teacher_id_assign" class="form-control" required>
+                        <option value="" disabled selected>Choose teacher...</option>
+                        {% for t in teachers %}
+                            <option value="{{ t.id }}">{{ t.first_name }} {{ t.last_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2 text-end">
+                    <button type="submit" class="btn btn-primary w-100 py-3"><i class="fas fa-link"></i> Link</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Instructor Accounts list -->
+        <div class="vbs-card p-4">
+            <h4 class="fw-bold mb-3"><i class="fas fa-users text-primary"></i> Registered Instructors</h4>
+            <hr class="mb-4">
+            
+            <div class="table-responsive">
+                <table class="vbs-table">
+                    <thead>
+                        <tr>
+                            <th>Teacher Name</th>
+                            <th>Username</th>
+                            <th>Contact details</th>
+                            <th>Assigned Rooms</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in teachers %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ t.first_name }} {{ t.last_name }}</td>
+                                <td class="font-monospace small">{{ t.user.username }}</td>
+                                <td>
+                                    <div class="small"><i class="fas fa-phone-alt text-muted me-1"></i> {{ t.phone or 'N/A' }}</div>
+                                    <div class="small text-muted"><i class="fas fa-envelope text-muted me-1"></i> {{ t.user.email }}</div>
+                                </td>
+                                <td>
+                                    {%- set all_cls = teacher_classes_map.get(t.id, []) -%}
+                                    {% if all_cls %}
+                                        {% for cls in all_cls %}
+                                            {% set primary = (cls.teacher_id == t.id) %}
+                                            {%- set eff_min = cls.min_age if cls.min_age is not none else (cls.category.min_age if cls.category else None) -%}
+                                            {%- set eff_max = cls.max_age if cls.max_age is not none else (cls.category.max_age if cls.category else None) -%}
+                                            {%- set eff_method = cls.assessment_method if cls.assessment_method else (cls.category.assessment_method if cls.category else '') -%}
+                                            <span class="badge mb-1 {% if primary %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size: 11px;">
+                                                {{ cls.name }}
+                                                {% if cls.category %} • {{ cls.category.name }}{% endif %}
+                                                {% if eff_min or eff_max %} • Ages {{ eff_min or '?' }}–{{ eff_max or '?' }}{% endif %}
+                                                {% if eff_method %} • {{ eff_method|upper }}{% endif %}
+                                                {% if primary %}<small> • Primary</small>{% endif %}
+                                            </span>
+                                            <a href="{{ url_for('super_admin_class_edit', class_id=cls.id) }}" class="btn btn-sm btn-light ms-1" title="Edit class"><i class="fas fa-edit"></i></a>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="badge bg-light text-muted" style="font-size: 11px;">None</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('super_admin_view_as_teacher', teacher_id=t.id) }}" class="btn btn-sm btn-outline-primary">View as Teacher</a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-5">
+                                    <i class="fas fa-user-slash d-block mb-3" style="font-size: 40px; color: #cbd5e1;"></i>
+                                    No teacher profiles found.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

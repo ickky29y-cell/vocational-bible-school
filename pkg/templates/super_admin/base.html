@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% block super_styles %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <!-- Sidebar navigation -->
+    <aside class="dashboard-sidebar" style="background-color: #0f172a; border-right: 2px solid #1e293b;">
+        <div class="sidebar-brand">
+            <i class="fas fa-church text-warning"></i> VBS <span>Chaplain</span>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item {% block nav_dash %}{% endblock %}">
+                <a href="/super-admin/dashboard/"><i class="fas fa-home"></i> Admin Dashboard</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_years %}{% endblock %}">
+                <a href="/super-admin/years/"><i class="fas fa-calendar-alt"></i> VBS Years</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_teachers %}{% endblock %}">
+                <a href="/super-admin/teachers/"><i class="fas fa-user-tie"></i> Teachers & Classes</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_reports %}{% endblock %}">
+                <a href="/super-admin/reports/"><i class="fas fa-chart-bar"></i> Score Reports</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_settings %}{% endblock %}">
+                <a href="/super-admin/settings/"><i class="fas fa-cogs"></i> System Settings</a>
+            </li>
+            <li class="sidebar-menu-item {% block nav_audits %}{% endblock %}">
+                <a href="/super-admin/audit-logs/"><i class="fas fa-history"></i> Audit Trail Logs</a>
+            </li>
+        </ul>
+        
+        <!-- User info block at bottom -->
+        <div class="sidebar-user" style="border-top-color: #1e293b;">
+            <img src="{{ url_for('static', filename='uploads/' + (deets.profile_photo if deets and deets.profile_photo != 'default-avatar.png' else 'default-avatar.svg')) }}" 
+                 class="sidebar-user-avatar" alt="Avatar">
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-name">{{ deets.username if deets else 'Chaplain' }}</div>
+                <div class="sidebar-user-role">Super Admin</div>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Main page workspace -->
+    <main class="dashboard-content">
+        {% block super_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

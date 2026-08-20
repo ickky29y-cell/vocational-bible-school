@@ -1,0 +1,102 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Edit Student - VBS Champions{% endblock %}
+
+{% block nav_students %}active{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-header">
+    <div>
+        <h1 class="dashboard-title">Edit Student Profile</h1>
+        <p class="text-muted mb-0">Update profile parameters for {{ student.first_name }} {{ student.last_name }}.</p>
+    </div>
+    <a href="{{ url_for('teacher_students', class_id=student.class_id) }}" class="btn btn-outline btn-pill py-2 px-3"><i class="fas fa-arrow-left"></i> Back to List</a>
+</div>
+
+<div class="vbs-card p-4 p-md-5 mx-auto" style="max-width: 800px; border-top: 5px solid var(--primary);">
+    <form action="/teacher/students/edit/{{ student.id }}/" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+        <h5 class="fw-bold mb-3 text-secondary"><i class="fas fa-id-card"></i> Personal Profile</h5>
+
+        <div class="row">
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="first_name">First Name</label>
+                <input type="text" name="first_name" id="first_name" class="form-control" required value="{{ student.first_name }}">
+            </div>
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="last_name">Last Name</label>
+                <input type="text" name="last_name" id="last_name" class="form-control" required value="{{ student.last_name }}">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 form-group">
+                <label class="form-label" for="age">Age</label>
+                <input type="number" name="age" id="age" class="form-control" required min="2" max="18" value="{{ student.age }}">
+            </div>
+            <div class="col-md-4 form-group">
+                <label class="form-label" for="gender">Gender</label>
+                <select name="gender" id="gender" class="form-control" required>
+                    <option value="Male" {% if student.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if student.gender == 'Female' %}selected{% endif %}>Female</option>
+                </select>
+            </div>
+            <div class="col-md-4 form-group">
+                <label class="form-label" for="class_id">Assign VBS Class</label>
+                <select name="class_id" id="class_id" class="form-control" required>
+                    {% for cls in classes %}
+                        <option value="{{ cls.id }}" {% if student.class_id == cls.id %}selected{% endif %}>{{ cls.name }}{% if cls.min_age or cls.max_age %} (Ages {{ cls.min_age or '?' }}–{{ cls.max_age or '?' }}){% elif cls.category %} ({{ cls.category.name }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="skill_id">Skill Acquisition (Optional)</label>
+            <select name="skill_id" id="skill_id" class="form-control">
+                <option value="">No skill selected</option>
+                {% for skill in skills or [] %}
+                    <option value="{{ skill.id }}" {% if student.skill_id == skill.id %}selected{% endif %}>{{ skill.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <h5 class="fw-bold mt-4 mb-3 text-secondary"><i class="fas fa-users"></i> Parents Contact Details</h5>
+
+        <div class="row mb-4">
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="parent_name">Parent/Guardian Name</label>
+                <input type="text" name="parent_name" id="parent_name" class="form-control" value="{{ student.parent_name or '' }}">
+            </div>
+            <div class="col-md-6 form-group">
+                <label class="form-label" for="parent_phone">Parent Phone Number</label>
+                <input type="text" name="parent_phone" id="parent_phone" class="form-control" value="{{ student.parent_phone or '' }}">
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <a href="{{ url_for('teacher_students', class_id=student.class_id) }}" class="btn btn-outline btn-pill py-2 px-4 me-2">Cancel</a>
+            <button type="submit" class="btn btn-primary btn-pill py-2 px-5">Save Changes</button>
+            <button type="button" id="reset_pwd_btn" class="btn btn-warning btn-pill py-2 px-4 ms-2">Reset & Show Password</button>
+        </div>
+    </form>
+</div>
+<script>
+document.getElementById('reset_pwd_btn').addEventListener('click', function(){
+    if(!confirm('Generate a temporary password for this student and display it?')) return;
+    fetch('/teacher/students/reset_password/{{ student.id }}/', {method: 'POST'})
+        .then(r => r.json())
+        .then(j => {
+            if(j.password){
+                // display transiently to the teacher only
+                alert('Temporary password for {{ student.first_name }}: ' + j.password + '\nPlease record this securely.');
+            } else if(j.error){
+                alert('Error: ' + j.error);
+            } else {
+                alert('Unexpected response.');
+            }
+        }).catch(e=>alert('Request failed: '+e));
+});
+</script>
+{% endblock %}
