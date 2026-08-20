@@ -57,8 +57,12 @@ with app.app_context():
         print('DATABASE_NOT_EMPTY=SKIP_RESTORE')
         raise SystemExit(0)
 
+    is_mysql = db.engine.dialect.name == 'mysql'
     with db.engine.begin() as connection:
-        connection.execute(text('SET FOREIGN_KEY_CHECKS=0'))
+        if is_mysql:
+            connection.execute(text('SET FOREIGN_KEY_CHECKS=0'))
+        else:
+            connection.execute(text('PRAGMA foreign_keys=OFF'))
         for table_name in reversed(list(snapshot['tables'])):
             if table_name in inspector.get_table_names():
                 connection.execute(text(f'DELETE FROM `{table_name}`'))
@@ -73,6 +77,9 @@ with app.app_context():
             ]
             for value in values:
                 connection.execute(table.insert(), value)
-        connection.execute(text('SET FOREIGN_KEY_CHECKS=1'))
+        if is_mysql:
+            connection.execute(text('SET FOREIGN_KEY_CHECKS=1'))
+        else:
+            connection.execute(text('PRAGMA foreign_keys=ON'))
 
     print(f'RESTORED_TABLES={len(snapshot["tables"])}')
