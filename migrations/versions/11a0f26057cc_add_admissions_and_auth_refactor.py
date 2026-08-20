@@ -1,7 +1,7 @@
 """Add admissions and auth refactor
 
 Revision ID: 11a0f26057cc
-Revises: 
+Revises: 0cd590792cca
 Create Date: 2026-08-17 11:34:10.110076
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '11a0f26057cc'
-down_revision = None
+down_revision = '0cd590792cca'
 branch_labels = None
 depends_on = None
 
@@ -44,7 +44,7 @@ def upgrade():
             sa.Column('workflow_id', sa.Integer(), nullable=True),
             sa.Column('notes', sa.Text(), nullable=True),
             sa.Column('created_at', sa.DateTime(), nullable=True),
-            sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+            sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
             sa.ForeignKeyConstraint(['workflow_id'], ['admission_workflows.id'], ),
             sa.PrimaryKeyConstraint('id')
         )

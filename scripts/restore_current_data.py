@@ -51,6 +51,7 @@ with app.app_context():
     existing_rows = sum(
         db.session.execute(text(f'SELECT COUNT(*) FROM `{table_name}`')).scalar()
         for table_name in inspector.get_table_names()
+        if table_name != 'alembic_version'
     )
     if existing_rows and not args.force:
         print('DATABASE_NOT_EMPTY=SKIP_RESTORE')
@@ -70,7 +71,8 @@ with app.app_context():
                 {key: typed_value(table.c[key], value) for key, value in row.items()}
                 for row in rows
             ]
-            connection.execute(table.insert(), values)
+            for value in values:
+                connection.execute(table.insert(), value)
         connection.execute(text('SET FOREIGN_KEY_CHECKS=1'))
 
     print(f'RESTORED_TABLES={len(snapshot["tables"])}')

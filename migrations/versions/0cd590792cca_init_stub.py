@@ -4,9 +4,9 @@ Revision ID: 0cd590792cca
 Revises: 
 Create Date: 2026-08-17 11:50:00.000000
 
-This is a no-op migration created to satisfy the Alembic revision
-referenced by the database but missing from the repository. It does
-not modify the schema.
+This baseline creates the model schema for fresh databases. The repository
+originally treated this revision as a no-op, which left fresh deployments
+without base tables such as exam_attempts.
 """
 from alembic import op
 import sqlalchemy as sa
@@ -20,8 +20,11 @@ depends_on = None
 
 
 def upgrade():
-    # no-op: placeholder for missing revision referenced by DB
-    pass
+    # The original baseline was missing from the repository. Creating the
+    # model metadata here lets later migrations safely apply incremental fixes.
+    from pkg import db
+
+    db.metadata.create_all(bind=op.get_bind())
 
 
 def downgrade():
