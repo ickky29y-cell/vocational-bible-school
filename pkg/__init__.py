@@ -30,12 +30,23 @@ try:
 except Exception:
     pass
 
-# Retrieve config parameters (env vars override instance config)
-db_pass = os.environ.get('DATABASE_PASS', app.config.get('DATABASE_PASS', '1234'))
-db_name = os.environ.get('DATABASE_NAME', app.config.get('DATABASE_NAME', 'vital_mesh'))
-db_user = os.environ.get('DATABASE_USER', app.config.get('DATABASE_USER', 'root'))
-db_host = os.environ.get('DATABASE_HOST', app.config.get('DATABASE_HOST', 'localhost'))
-db_port = int(os.environ.get('DATABASE_PORT', app.config.get('DATABASE_PORT', 3306)))
+# Retrieve config parameters (support both deployment naming conventions)
+def first_valid_env(*names, default=None):
+    for name in names:
+        value = os.environ.get(name)
+        if value and not value.startswith('${{'):
+            return value
+    return default
+
+
+db_pass = first_valid_env('DATABASE_PASS', 'MYSQLPASSWORD', default=app.config.get('DATABASE_PASS', ''))
+db_name = first_valid_env('DATABASE_NAME', 'MYSQL_DATABASE', default=app.config.get('DATABASE_NAME', 'vvs'))
+db_user = first_valid_env('DATABASE_USER', 'MYSQLUSER', default=app.config.get('DATABASE_USER', 'root'))
+db_host = first_valid_env('DATABASE_HOST', 'MYSQLHOST', default=app.config.get('DATABASE_HOST', 'localhost'))
+try:
+    db_port = int(first_valid_env('DATABASE_PORT', 'MYSQLPORT', default=app.config.get('DATABASE_PORT', 3306)))
+except (TypeError, ValueError):
+    db_port = 3306
 
 # Database URI choices
 mysql_uri = f"mysql+mysqlconnector://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"

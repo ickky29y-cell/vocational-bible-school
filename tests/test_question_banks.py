@@ -44,17 +44,14 @@ def _seed_teacher_and_classes():
     return teacher_user, teacher, year, class_a, class_b
 
 
-def test_default_teacher_seed_creates_sean_account():
+def test_default_teacher_seed_does_not_create_deleted_sean_account():
     with app.app_context():
         from pkg.super_admin_routes import initialize_and_seed
 
         initialize_and_seed()
 
         user = User.query.filter_by(username='sean').first()
-        assert user is not None
-        assert user.role.name == 'teacher'
-        assert user.check_password('123456')
-        assert TeacherProfile.query.filter_by(user_id=user.id).first() is not None
+        assert user is None
 
 
 def test_teacher_can_save_manual_score_without_cbt_submission():
