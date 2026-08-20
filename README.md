@@ -25,6 +25,11 @@ docker-compose exec web flask db upgrade
 docker-compose exec web python scripts/seed_roles.py
 ```
 
+The repository includes the current clean data snapshot at
+`data/current_data.json`. A fresh deployment restores it automatically after
+migrations. Existing non-empty databases are protected from overwrite; the
+restore command exits unless `--force` is explicitly provided.
+
 Security notes
 - Change `SECRET_KEY` before deploying.
 - Do not use the default admin passwords in production.

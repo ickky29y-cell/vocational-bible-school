@@ -22,7 +22,7 @@ DEFAULT_SUPER = {
 
 with app.app_context():
     # Create roles (include super_admin)
-    for r in ['super_admin', 'student']:
+    for r in ['super_admin', 'teacher', 'student']:
         if not Role.query.filter_by(name=r).first():
             role = Role(name=r, description=f"Default {r} role")
             db.session.add(role)
