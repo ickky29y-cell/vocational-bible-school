@@ -37,6 +37,21 @@ def first_valid_env(*names, default=None):
 
 
 db_url = first_valid_env('DATABASE_URL', 'MYSQL_URL', default=app.config.get('DATABASE_URL'))
+
+def normalize_database_url(url):
+    if not url:
+        return url
+    normalized = url.strip()
+    if normalized.startswith('mysql://'):
+        return 'mysql+mysqlconnector://' + normalized.split('://', 1)[1]
+    if normalized.startswith('mysql+pymysql://'):
+        return 'mysql+mysqlconnector://' + normalized.split('://', 1)[1]
+    if normalized.startswith('mysql+mysqldb://'):
+        return 'mysql+mysqlconnector://' + normalized.split('://', 1)[1]
+    return normalized
+
+
+db_url = normalize_database_url(db_url)
 db_pass = first_valid_env('DATABASE_PASS', 'MYSQLPASSWORD', default=app.config.get('DATABASE_PASS', ''))
 db_name = first_valid_env('DATABASE_NAME', 'MYSQLDATABASE', 'MYSQL_DATABASE', default=app.config.get('DATABASE_NAME', 'vvs'))
 db_user = first_valid_env('DATABASE_USER', 'MYSQLUSER', default=app.config.get('DATABASE_USER', 'root'))
