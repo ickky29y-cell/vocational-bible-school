@@ -18,9 +18,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.jinja_env.auto_reload = True
 
-# Ensure instance folder exists
-os.makedirs(app.instance_path, exist_ok=True)
-
 # Load environment variables from .env if present
 load_dotenv()
 
@@ -75,16 +72,6 @@ else:
         app.config['SQLALCHEMY_DATABASE_URI'] = sqlite_uri
 
 db.init_app(app)
-
-
-def ensure_database_schema():
-    with app.app_context():
-        # Keep startup compatible with fresh databases. Incremental schema
-        # changes belong in Alembic migrations, not raw SQL repair statements.
-        db.create_all()
-
-
-ensure_database_schema()
 
 migrate.init_app(app, db)
 login_manager.init_app(app)

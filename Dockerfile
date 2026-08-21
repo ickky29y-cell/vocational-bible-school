@@ -18,4 +18,4 @@ ENV FLASK_ENV=production
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "flask db upgrade && python scripts/restore_current_data.py && python run.py"]
+CMD ["python", "run.py"]

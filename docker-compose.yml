@@ -24,8 +24,6 @@ services:
       - DATABASE_NAME=vvs
     ports:
       - "8080:8080"
-    volumes:
-      - .:/app
 
 volumes:
   db_data:

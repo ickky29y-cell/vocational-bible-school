@@ -1,0 +1,12 @@
+.git
+.env
+data/
+instance/
+migrations/
+scripts/
+tests/
+vvvs/
+debug_*.py
+README.md
+SETUP_XAMPP.md
+docker-compose.yml

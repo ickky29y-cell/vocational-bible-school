@@ -3,7 +3,6 @@ import csv
 import io
 from flask import render_template, url_for, request, redirect, flash, session, Response
 from sqlalchemy import func, text
-from werkzeug.security import generate_password_hash
 from pkg import app, db
 from flask_login import current_user
 from pkg.utils import current_user_id
@@ -21,35 +20,10 @@ def log_audit(user_id, action, details=None):
     except Exception:
         db.session.rollback()
 
-# Database Auto-Initializer and Seeder
-@app.before_request
+# Retained for compatibility with local verification helpers; production startup
+# must never create schema, roles, or users automatically.
 def initialize_and_seed():
-    try:
-        db.create_all()
-
-        roles = {
-            'super_admin': 'Super Administrator (Chaplain)',
-            'teacher': 'VBS Teacher',
-            'student': 'VBS Pupil',
-        }
-        for role_name, description in roles.items():
-            if not Role.query.filter_by(name=role_name).first():
-                db.session.add(Role(name=role_name, description=description))
-
-        super_admin_role = Role.query.filter_by(name='super_admin').first()
-        if super_admin_role and not User.query.filter_by(username='chaplain').first():
-            db.session.add(User(
-                username='chaplain',
-                email='admin@vbs.com',
-                password_hash=generate_password_hash('admin1234'),
-                role_id=super_admin_role.id
-            ))
-
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        # Non-blocking log if DB isn't ready during migrations
-        print("Initialization skipped or failed:", str(e))
+    return None
 
 # Authorization guard
 def require_super_admin():

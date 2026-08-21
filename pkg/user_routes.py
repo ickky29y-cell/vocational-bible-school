@@ -198,11 +198,10 @@ def student_dashboard():
 
     if student_class:
         effective_method = student_class.assessment_method or (student_class.category.assessment_method if student_class.category else None)
-        has_manual_assessment = effective_method in ('manual', 'both')
         if effective_method == 'manual':
             is_under_six = True
-        if has_manual_assessment:
-            skills_assessments = SkillAssessment.query.filter_by(student_id=student.id).all()
+        skills_assessments = SkillAssessment.query.filter_by(student_id=student.id).all()
+        has_manual_assessment = effective_method in ('manual', 'both') or bool(skills_assessments)
         if effective_method != 'manual':
             # Fetch exams for student class
             # Include exams directly assigned to the class plus exams assigned via the many-to-many mapping
@@ -280,8 +279,8 @@ def student_result_print():
     manual_percentage = round((manual_earned / manual_possible) * 100, 2) if manual_possible else None
     cbt_percentage = round((cbt_earned / cbt_possible) * 100, 2) if cbt_possible else None
 
-    has_manual = bool(manual_assessments) and effective_method in ('manual', 'both')
-    has_cbt = bool(cbt_results) and effective_method in ('cbt', 'both')
+    has_manual = bool(manual_assessments)
+    has_cbt = bool(cbt_results)
     if has_manual and has_cbt:
         result_type = 'Combined'
         manual_weight = float(student_class.manual_grade_weight or 50.0)
