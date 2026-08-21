@@ -31,7 +31,7 @@ except Exception:
 def first_valid_env(*names, default=None):
     for name in names:
         value = os.environ.get(name)
-        if value and not value.startswith('${{'):
+        if value:
             return value
     return default
 
