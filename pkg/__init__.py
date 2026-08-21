@@ -36,8 +36,9 @@ def first_valid_env(*names, default=None):
     return default
 
 
+db_url = first_valid_env('DATABASE_URL', 'MYSQL_URL', default=app.config.get('DATABASE_URL'))
 db_pass = first_valid_env('DATABASE_PASS', 'MYSQLPASSWORD', default=app.config.get('DATABASE_PASS', ''))
-db_name = first_valid_env('DATABASE_NAME', 'MYSQL_DATABASE', default=app.config.get('DATABASE_NAME', 'vvs'))
+db_name = first_valid_env('DATABASE_NAME', 'MYSQLDATABASE', 'MYSQL_DATABASE', default=app.config.get('DATABASE_NAME', 'vvs'))
 db_user = first_valid_env('DATABASE_USER', 'MYSQLUSER', default=app.config.get('DATABASE_USER', 'root'))
 db_host = first_valid_env('DATABASE_HOST', 'MYSQLHOST', default=app.config.get('DATABASE_HOST', 'localhost'))
 try:
@@ -46,30 +47,16 @@ except (TypeError, ValueError):
     db_port = 3306
 
 # Database URI choices
-mysql_uri = f"mysql+mysqlconnector://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+mysql_uri = db_url or f"mysql+mysqlconnector://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
 sqlite_uri = "sqlite:///" + os.path.join(app.instance_path, "vbs.db")
 
-# Fallback option if MySQL is not available or USE_SQLITE env is set
+# SQLite is available only when explicitly enabled for local development.
 use_sqlite = os.environ.get('USE_SQLITE', 'False').lower() in ('true', '1')
 
 if use_sqlite:
     app.config['SQLALCHEMY_DATABASE_URI'] = sqlite_uri
 else:
-    # Try connecting to MySQL using mysql.connector
-    try:
-        import mysql.connector
-        conn = mysql.connector.connect(
-            host=db_host,
-            user=db_user,
-            password=db_pass,
-            database=db_name,
-            connect_timeout=2
-        )
-        conn.close()
-        app.config['SQLALCHEMY_DATABASE_URI'] = mysql_uri
-    except Exception as e:
-        print(f"MySQL connection failed: {str(e)}. Falling back to local SQLite database.")
-        app.config['SQLALCHEMY_DATABASE_URI'] = sqlite_uri
+    app.config['SQLALCHEMY_DATABASE_URI'] = mysql_uri
 
 db.init_app(app)
 
