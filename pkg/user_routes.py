@@ -28,13 +28,20 @@ def log_audit(user_id, action, details=None):
 @app.context_processor
 def inject_global_data():
     deets = None
-    if current_user and getattr(current_user, 'is_authenticated', False):
-        deets = current_user
-    else:
-        uid = current_user_id()
-        if uid:
-            deets = User.query.get(uid)
-    active_year = VbsYear.query.filter_by(is_active=True).first()
+    active_year = None
+    try:
+        if current_user and getattr(current_user, 'is_authenticated', False):
+            deets = current_user
+        else:
+            uid = current_user_id()
+            if uid:
+                deets = User.query.get(uid)
+        active_year = VbsYear.query.filter_by(is_active=True).first()
+    except Exception:
+        # Some requests may carry stale session data or transient DB issues.
+        # Keep the template context safe instead of throwing a 500 and spamming logs.
+        deets = None
+        active_year = None
     return dict(
         deets=deets,
         active_year=active_year,
