@@ -31,7 +31,7 @@ except Exception:
 def first_valid_env(*names, default=None):
     for name in names:
         value = os.environ.get(name)
-        if value and not value.startswith('${{'):
+        if value:
             return value
     return default
 
@@ -114,3 +114,4 @@ def internal_error(error):
 from pkg import user_routes
 from pkg import admin_routes
 from pkg import super_admin_routes
+
