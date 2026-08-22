@@ -80,6 +80,13 @@ login_manager.init_app(app)
 login_manager.login_view = 'user_login'
 login_manager.login_message_category = 'errormsg'
 
+@app.route('/debug-db-check')
+def debug_db_check():
+    from sqlalchemy import text
+    result = db.session.execute(text("SELECT user, host FROM mysql.user WHERE user='root'"))
+    rows = result.fetchall()
+    return {"grants": [dict(r._mapping) for r in rows]}
+    
 # Flask-Login user loader
 @login_manager.user_loader
 def load_user(user_id):
